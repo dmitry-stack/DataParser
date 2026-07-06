@@ -60,70 +60,119 @@ namespace ProcessingApp.Application
             }
         }
 
+        private List<RecordDTO> GetFilteredData()
+        {
+            var repository = new RecordRepository();
+            string? lastName = string.IsNullOrWhiteSpace(LastNameTextBox.Text) ? null : LastNameTextBox.Text;
+            string? firstName = string.IsNullOrWhiteSpace(FirstNameTextBox.Text) ? null : FirstNameTextBox.Text;
+            string? surName = string.IsNullOrWhiteSpace(SurNameTextBox.Text) ? null : SurNameTextBox.Text;
+            string? city = string.IsNullOrWhiteSpace(CityTextBox.Text) ? null : CityTextBox.Text;
+            string? country = string.IsNullOrWhiteSpace(CountryTextBox.Text) ? null : CountryTextBox.Text;
+            DateTime? date = MyDatePicker.SelectedDate;
+            return repository.GetFilteredRecords(date, firstName, surName, country, city, lastName);
+        }
+
         private void ExportExcelBtn_Click(object sender, RoutedEventArgs e)
         {
+            try
+            {
+                StatusLabel.Text = "Сбор данных для Excel...";
 
+
+                var filteredData = GetFilteredData();
+                if (filteredData.Count == 0)
+                {
+                    MessageBox.Show("Нет данных для экспорта.", "Внимание", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    StatusLabel.Text = "Готов к работе";
+                    return;
+                }
+
+                var saveFileDialog = new SaveFileDialog
+                {
+                    Filter = "Excel files (*.xlsx)|*.xlsx",
+                    DefaultExt = ".xlsx",
+                    FileName = "exported_data"
+                };
+
+                if (saveFileDialog.ShowDialog() == true)
+                {
+                    StatusLabel.Text = "Сохранение Excel файла...";
+
+                    var exporter = new ExcelExporter();
+                    exporter.ExportToExcel(filteredData, saveFileDialog.FileName);
+
+                    StatusLabel.Text = "Экспорт в Excel успешно завершен!";
+                    MessageBox.Show($"Данные успешно экспортированы в Excel! Всего записей: {filteredData.Count}", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                else
+                {
+                    StatusLabel.Text = "Экспорт отменен";
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка при экспорте в Excel: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                StatusLabel.Text = "Ошибка";
+            }
         }
 
         private void ExportXmlBtn_Click(object sender, RoutedEventArgs e)
         {
-
-        }
-        private void Search_Btn_Click(object sender, RoutedEventArgs e)
-        {
             try
             {
+                StatusLabel.Text = "Сбор данных для XML...";
 
-                var repository = new RecordRepository();
+               
+                var filteredData = GetFilteredData();
+                if (filteredData.Count == 0)
+                {
+                    MessageBox.Show("Нет данных для экспорта по указанным фильтрам.", "Внимание", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    StatusLabel.Text = "Готов к работе";
+                    return;
+                }
 
-                string? cityFilter = CityTextBox.Text;
-                string? lastNameFilter = LastNameTextBox.Text;
-                string? firstNameFilter = FirstNameTextBox.Text;
-                string? surNameFilter = SurNameTextBox.Text;
-                string? countryFilter = CountryTextBox.Text;
+                var saveFileDialog = new SaveFileDialog
+                {
+                    Filter = "XML files (*.xml)|*.xml",
+                    DefaultExt = ".xml",
+                    FileName = "exported_data"
+                };
 
-                DateTime? dateFilter = MyDatePicker.SelectedDate;
+                if (saveFileDialog.ShowDialog() == true)
+                {
+                    StatusLabel.Text = "Сохранение XML файла...";
 
-                List<RecordDTO> filteredData = repository.GetFilteredRecords(
-                    dateFilter,
-                    firstNameFilter,
-                    surNameFilter,
-                    countryFilter,
-                    cityFilter,
-                    lastNameFilter
-                );
+                    var exporter = new XmlExporter();
+                    exporter.ExportToXml(filteredData, saveFileDialog.FileName);
 
-
-                MessageBox.Show($"Найдено записей\nв базе: {filteredData.Count}", "Результат фильтрации");
-
+                    StatusLabel.Text = "Экспорт в XML успешно завершен!";
+                    MessageBox.Show($"Данные успешно экспортированы! Всего записей: {filteredData.Count}", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                else
+                {
+                    StatusLabel.Text = "Экспорт отменен";
+                }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка при поиске: {ex.Message}");
+                MessageBox.Show($"Ошибка при экспорте в XML: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                StatusLabel.Text = "Ошибка";
             }
         }
+        
 
         private void CheckFilterBtn_Click(object sender, RoutedEventArgs e)
         {
             try
             {
 
-                var repository = new RecordRepository();
-
-                string? lastName = string.IsNullOrWhiteSpace(LastNameTextBox.Text) ? null : LastNameTextBox.Text;
-                string? firstName = string.IsNullOrWhiteSpace(FirstNameTextBox.Text) ? null : FirstNameTextBox.Text;
-                string? surName = string.IsNullOrWhiteSpace(SurNameTextBox.Text) ? null : SurNameTextBox.Text;
-                string? city = string.IsNullOrWhiteSpace(CityTextBox.Text) ? null : CityTextBox.Text;
-                string? country = string.IsNullOrWhiteSpace(CountryTextBox.Text) ? null : CountryTextBox.Text;
-                DateTime? date = MyDatePicker.SelectedDate;
-
-                var result = repository.GetFilteredRecords(date, firstName, surName, country, city, lastName);
-
+               
+                var result = GetFilteredData();
                 var displayList = result.Take(500).ToList();
 
                 MyDataGrid.ItemsSource = displayList;
 
-              StatusLabel.Text = $"Поиск завершен. Найдено всего: {result.Count} (Отображено первые {displayList.Count})";
+              StatusLabel.Text = $"Поиск завершен.\n Найдено всего: {result.Count}";
             }
             catch (Exception ex)
             {
