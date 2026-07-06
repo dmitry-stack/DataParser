@@ -7,7 +7,7 @@ namespace ProcessingApp.Infrastructure
 {
     public class RecordRepository
     {
-        public List<Record> GetFilteredRecords(DateTime? date, string? firstName,string? surName, string? country, string? city, string? lastName)
+        public List<RecordDTO> GetFilteredRecords(DateTime? date, string? firstName,string? surName, string? country, string? city, string? lastName)
         {
             using var context = new AppDbContext();
 
@@ -46,7 +46,15 @@ namespace ProcessingApp.Infrastructure
             }
 
            
-            return query.ToList();
+            return query.Select(x => new RecordDTO
+            {
+                Date = x.Date,
+                FirstName = x.FirstName,
+                LastName = x.LastName,
+                SurName = x.SurName,
+                City = x.City,
+                Country = x.Country
+            }).ToList();
         }
     }
 }

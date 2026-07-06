@@ -1,9 +1,9 @@
-﻿<Window x:Class="ProcessingApp.User.MainWindow"
+<Window x:Class="ProcessingApp.Application.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:ProcessingApp.User"
+        xmlns:local="clr-namespace:ProcessingApp.Application"
         mc:Ignorable="d"
         Title="Обработка и экспорт данных" Height="650" Width="700" MinHeight="650" MinWidth="700">
 
@@ -18,7 +18,7 @@
         <GroupBox Header="1. Импорт исходных данных" Grid.Row="0" Margin="0,0,0,15" Padding="10">
             <StackPanel Orientation="Horizontal">
                 <Button Name="Choose_File_Btn" Content="Выбрать и загрузить CSV файл" Padding="10,5" Click="Choose_File_Btn_Click"/>
-                <TextBlock Text="Разделитель в файле должен быть ';'" VerticalAlignment="Center" Margin="15,0,0,0" Foreground="Gray" FontStyle="Italic"/>
+               
             </StackPanel>
         </GroupBox>
 

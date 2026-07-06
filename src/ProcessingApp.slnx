@@ -1,5 +1,5 @@
 <Solution>
   <Project Path="Domain/ProcessingApp.Domain.csproj" />
   <Project Path="Infrastructure/ProcessingApp.Infrastructure.csproj" />
-  <Project Path="User/ProcessingApp.User.csproj" />
+	<Project Path="Application/ProcessingApp.Application.csproj" />
 </Solution>

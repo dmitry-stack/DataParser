@@ -1,21 +1,21 @@
-﻿using System.Configuration;
+using System.Configuration;
 using System.Data;
 using System.Windows;
 using Microsoft.EntityFrameworkCore;
 using ProcessingApp.Infrastructure;
 
-namespace ProcessingApp.User
+namespace ProcessingApp.Application
 {
     /// <summary>
     /// Interaction logic for App.xaml
     /// </summary>
-    public partial class App : Application
+    public partial class App : System.Windows.Application
     {
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
 
-         
+
             try
             {
                 using (var context = new AppDbContext())
@@ -39,4 +39,3 @@ namespace ProcessingApp.User
         }
     }
         }
-

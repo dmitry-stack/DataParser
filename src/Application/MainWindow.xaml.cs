@@ -1,4 +1,4 @@
-﻿using Microsoft.Win32;
+using Microsoft.Win32;
 using ProcessingApp.Domain;
 using ProcessingApp.Infrastructure;
 using System.Diagnostics;
@@ -13,7 +13,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-namespace ProcessingApp.User
+namespace ProcessingApp.Application
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
@@ -25,7 +25,7 @@ namespace ProcessingApp.User
             InitializeComponent();
         }
 
-     
+
         private async void Choose_File_Btn_Click(object sender, RoutedEventArgs e)
         {
             var dialog = new OpenFileDialog
@@ -54,7 +54,7 @@ namespace ProcessingApp.User
             }
             finally
             {
-                
+
                 Choose_File_Btn.IsEnabled = true;
                 StatusLabel.Text = "Готов к работе";
             }
@@ -62,18 +62,18 @@ namespace ProcessingApp.User
 
         private void ExportExcelBtn_Click(object sender, RoutedEventArgs e)
         {
-         
+
         }
 
         private void ExportXmlBtn_Click(object sender, RoutedEventArgs e)
         {
-          
+
         }
         private void Search_Btn_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-               
+
                 var repository = new RecordRepository();
 
                 string? cityFilter = CityTextBox.Text;
@@ -84,7 +84,7 @@ namespace ProcessingApp.User
 
                 DateTime? dateFilter = MyDatePicker.SelectedDate;
 
-                List<Record> filteredData = repository.GetFilteredRecords(
+                List<RecordDTO> filteredData = repository.GetFilteredRecords(
                     dateFilter,
                     firstNameFilter,
                     surNameFilter,
@@ -93,8 +93,8 @@ namespace ProcessingApp.User
                     lastNameFilter
                 );
 
-  
-                MessageBox.Show($"Найдено записей в базе: {filteredData.Count}", "Результат фильтрации");
+
+                MessageBox.Show($"Найдено записей\nв базе: {filteredData.Count}", "Результат фильтрации");
 
             }
             catch (Exception ex)
@@ -102,12 +102,12 @@ namespace ProcessingApp.User
                 MessageBox.Show($"Ошибка при поиске: {ex.Message}");
             }
         }
-       
+
         private void CheckFilterBtn_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-            
+
                 var repository = new RecordRepository();
 
                 string? lastName = string.IsNullOrWhiteSpace(LastNameTextBox.Text) ? null : LastNameTextBox.Text;
