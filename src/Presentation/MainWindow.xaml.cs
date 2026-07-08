@@ -1,30 +1,37 @@
 using Microsoft.Win32;
+using ProcessingApp.Application;
+using ProcessingApp.Application.Interfaces;
 using ProcessingApp.Domain;
-using ProcessingApp.Infrastructure;
-using System.Diagnostics;
-using System.IO;
-using System.Text;
+using System;
+using System.Collections.Generic;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-namespace ProcessingApp.Application
+
+namespace ProcessingApp.Presentation
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
     public partial class MainWindow : Window
     {
-        public MainWindow()
+       
+        private readonly IRecordRepository _repository;
+        private readonly IExcelExporter _excelExporter;
+        private readonly IXmlExporter _xmlExporter;
+        private readonly ICsvImporter _csvImporter; 
+
+        public MainWindow(
+            IRecordRepository repository,
+            IExcelExporter excelExporter,
+            IXmlExporter xmlExporter,
+            ICsvImporter csvImporter)
         {
             InitializeComponent();
-        }
 
+            _repository = repository;
+            _excelExporter = excelExporter;
+            _xmlExporter = xmlExporter;
+            _csvImporter = csvImporter;
+        }
 
         private async void Choose_File_Btn_Click(object sender, RoutedEventArgs e)
         {
@@ -40,11 +47,9 @@ namespace ProcessingApp.Application
             try
             {
                 Choose_File_Btn.IsEnabled = false;
-
                 StatusLabel.Text = "Идет импорт данных, пожалуйста, подождите...";
 
-                var importer = new CSVImport();
-                await importer.ImportCsvAsync(dialog.FileName);
+                await _csvImporter.ImportCsvAsync(dialog.FileName);
 
                 MessageBox.Show("Импорт успешно завершен!", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
             }
@@ -54,39 +59,27 @@ namespace ProcessingApp.Application
             }
             finally
             {
-
                 Choose_File_Btn.IsEnabled = true;
                 StatusLabel.Text = "Готов к работе";
             }
         }
 
-        private List<RecordDTO> GetFilteredData()
+        private IAsyncEnumerable<RecordDTO> GetFilteredDataStream()
         {
-            var repository = new RecordRepository();
             string? lastName = string.IsNullOrWhiteSpace(LastNameTextBox.Text) ? null : LastNameTextBox.Text;
             string? firstName = string.IsNullOrWhiteSpace(FirstNameTextBox.Text) ? null : FirstNameTextBox.Text;
             string? surName = string.IsNullOrWhiteSpace(SurNameTextBox.Text) ? null : SurNameTextBox.Text;
             string? city = string.IsNullOrWhiteSpace(CityTextBox.Text) ? null : CityTextBox.Text;
             string? country = string.IsNullOrWhiteSpace(CountryTextBox.Text) ? null : CountryTextBox.Text;
             DateTime? date = MyDatePicker.SelectedDate;
-            return repository.GetFilteredRecords(date, firstName, surName, country, city, lastName);
+
+            return _repository.GetFilteredRecordsAsync(date, firstName, surName, country, city, lastName);
         }
 
-        private void ExportExcelBtn_Click(object sender, RoutedEventArgs e)
+        private async void ExportExcelBtn_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                StatusLabel.Text = "Сбор данных для Excel...";
-
-
-                var filteredData = GetFilteredData();
-                if (filteredData.Count == 0)
-                {
-                    MessageBox.Show("Нет данных для экспорта.", "Внимание", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    StatusLabel.Text = "Готов к работе";
-                    return;
-                }
-
                 var saveFileDialog = new SaveFileDialog
                 {
                     Filter = "Excel files (*.xlsx)|*.xlsx",
@@ -96,17 +89,15 @@ namespace ProcessingApp.Application
 
                 if (saveFileDialog.ShowDialog() == true)
                 {
-                    StatusLabel.Text = "Сохранение Excel файла...";
+                    StatusLabel.Text = "Создание файла Excel...";
+                    ExportExcelBtn.IsEnabled = false;
 
-                    var exporter = new ExcelExporter();
-                    exporter.ExportToExcel(filteredData, saveFileDialog.FileName);
+                    var stream = GetFilteredDataStream();
+
+                    await _excelExporter.ExportToExcelAsync(stream, saveFileDialog.FileName);
 
                     StatusLabel.Text = "Экспорт в Excel успешно завершен!";
-                    MessageBox.Show($"Данные успешно экспортированы в Excel! Всего записей: {filteredData.Count}", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-                else
-                {
-                    StatusLabel.Text = "Экспорт отменен";
+                    MessageBox.Show("Данные успешно экспортированы в Excel!", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
             }
             catch (Exception ex)
@@ -114,23 +105,16 @@ namespace ProcessingApp.Application
                 MessageBox.Show($"Ошибка при экспорте в Excel: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
                 StatusLabel.Text = "Ошибка";
             }
+            finally
+            {
+                ExportExcelBtn.IsEnabled = true;
+            }
         }
 
-        private void ExportXmlBtn_Click(object sender, RoutedEventArgs e)
+        private async void ExportXmlBtn_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                StatusLabel.Text = "Сбор данных для XML...";
-
-               
-                var filteredData = GetFilteredData();
-                if (filteredData.Count == 0)
-                {
-                    MessageBox.Show("Нет данных для экспорта по указанным фильтрам.", "Внимание", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    StatusLabel.Text = "Готов к работе";
-                    return;
-                }
-
                 var saveFileDialog = new SaveFileDialog
                 {
                     Filter = "XML files (*.xml)|*.xml",
@@ -141,16 +125,14 @@ namespace ProcessingApp.Application
                 if (saveFileDialog.ShowDialog() == true)
                 {
                     StatusLabel.Text = "Сохранение XML файла...";
+                    ExportXmlBtn.IsEnabled = false;
 
-                    var exporter = new XmlExporter();
-                    exporter.ExportToXml(filteredData, saveFileDialog.FileName);
+                    var stream = GetFilteredDataStream();
+
+                    await _xmlExporter.ExportToXmlAsync(stream, saveFileDialog.FileName);
 
                     StatusLabel.Text = "Экспорт в XML успешно завершен!";
-                    MessageBox.Show($"Данные успешно экспортированы! Всего записей: {filteredData.Count}", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-                else
-                {
-                    StatusLabel.Text = "Экспорт отменен";
+                    MessageBox.Show("Данные успешно экспортированы в XML!", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
             }
             catch (Exception ex)
@@ -158,27 +140,44 @@ namespace ProcessingApp.Application
                 MessageBox.Show($"Ошибка при экспорте в XML: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
                 StatusLabel.Text = "Ошибка";
             }
+            finally
+            {
+                ExportXmlBtn.IsEnabled = true;
+            }
         }
-        
 
-        private void CheckFilterBtn_Click(object sender, RoutedEventArgs e)
+        private async void CheckFilterBtn_Click(object sender, RoutedEventArgs e)
         {
             try
             {
+                StatusLabel.Text = "Поиск данных...";
+                CheckFilterBtn.IsEnabled = false;
 
-               
-                var result = GetFilteredData();
-                var displayList = result.Take(500).ToList();
+                var stream = GetFilteredDataStream();
+                var displayList = new List<RecordDTO>();
+                int totalCount = 0;
+
+                await foreach (var record in stream)
+                {
+                    if (displayList.Count < 500)
+                    {
+                        displayList.Add(record);
+                    }
+                    totalCount++;
+                }
 
                 MyDataGrid.ItemsSource = displayList;
-
-              StatusLabel.Text = $"Поиск завершен.\n Найдено всего: {result.Count}";
+                StatusLabel.Text = $"Поиск завершен. \nНайдено всего: {totalCount} (Показано {displayList.Count})";
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Ошибка при фильтрации: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
                 StatusLabel.Text = "Ошибка";
             }
+            finally
+            {
+                CheckFilterBtn.IsEnabled = true;
+            }
         }
     }
-    }
+}

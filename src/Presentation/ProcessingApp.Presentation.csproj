@@ -9,8 +9,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-	<ProjectReference Include="..\Domain\ProcessingApp.Domain.csproj" />
-	<ProjectReference Include="..\Infrastructure\ProcessingApp.Infrastructure.csproj" />
+    <ProjectReference Include="..\Infrastructure\ProcessingApp.Infrastructure.csproj" />
+    <ProjectReference Include="..\ProcessingApp.Application\ProcessingApp.Application.csproj" />
   </ItemGroup>
 
 </Project>

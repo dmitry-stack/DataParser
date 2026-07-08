@@ -1,18 +1,18 @@
-﻿using ProcessingApp.Domain;
+﻿using ClosedXML.Excel;
+using ProcessingApp.Application.Interfaces;
+using ProcessingApp.Domain;
+using ProcessingApp.Infrastructure;
 using System;
 using System.Collections.Generic;
-using System.Text;
-using ClosedXML.Excel;
+using System.Threading.Tasks;
 
 namespace ProcessingApp.Infrastructure
 {
-    public class ExcelExporter
+    public class ExcelExporter : IExcelExporter
     {
-        public void ExportToExcel(List<RecordDTO> records, string filePath)
+        public async Task ExportToExcelAsync(IAsyncEnumerable<RecordDTO> records, string filePath)
         {
-           
             using var workbook = new XLWorkbook();
-
             var worksheet = workbook.Worksheets.Add("Экспорт Данных");
 
             worksheet.Cell(1, 1).Value = "№";
@@ -26,7 +26,8 @@ namespace ProcessingApp.Infrastructure
             worksheet.Row(1).Style.Font.Bold = true;
 
             int currentRow = 2;
-            foreach (var record in records)
+
+            await foreach (var record in records)
             {
                 worksheet.Cell(currentRow, 1).Value = currentRow - 1;
                 worksheet.Cell(currentRow, 2).Value = record.Date.ToString("dd.MM.yyyy");

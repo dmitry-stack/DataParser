@@ -1,10 +1,12 @@
+
+using ProcessingApp.Application;
+using ProcessingApp.Infrastructure;
 using System.Configuration;
 using System.Data;
 using System.Windows;
-using Microsoft.EntityFrameworkCore;
-using ProcessingApp.Infrastructure;
 
-namespace ProcessingApp.Application
+
+namespace ProcessingApp.Presentation
 {
     /// <summary>
     /// Interaction logic for App.xaml
@@ -33,8 +35,12 @@ namespace ProcessingApp.Application
                 Current.Shutdown();
                 return; 
             }
+            var repository = new RecordRepository();
+            var excelExporter = new ExcelExporter();
+            var xmlExporter = new XmlExporter();
+            var csvImporter = new CSVImport();
 
-            var mainWindow = new MainWindow();
+            var mainWindow = new MainWindow(repository, excelExporter, xmlExporter, csvImporter);
             mainWindow.Show();
         }
     }

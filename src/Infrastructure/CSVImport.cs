@@ -1,4 +1,5 @@
 ﻿using Microsoft.VisualBasic;
+using ProcessingApp.Application.Interfaces;
 using ProcessingApp.Domain;
 using System;
 using System.Collections.Generic;
@@ -9,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace ProcessingApp.Infrastructure;
 
-public class CSVImport
+public class CSVImport : ICsvImporter
 {
 
     private const char CsvSeparator = ';';

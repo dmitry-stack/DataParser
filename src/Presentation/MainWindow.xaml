@@ -1,9 +1,9 @@
-<Window x:Class="ProcessingApp.Application.MainWindow"
+<Window x:Class="ProcessingApp.Presentation.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:ProcessingApp.Application"
+        xmlns:local="clr-namespace:ProcessingApp.Presentation"
         mc:Ignorable="d"
         Title="Обработка и экспорт данных" Height="650" Width="700" MinHeight="650" MinWidth="700">
 
