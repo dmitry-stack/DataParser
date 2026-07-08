@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace ProcessingApp.Domain
+namespace ProcessingApp.Application
 {
     public class RecordDTO
     {
