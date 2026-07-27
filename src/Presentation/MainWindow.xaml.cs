@@ -1,10 +1,10 @@
 using Microsoft.Win32;
 using ProcessingApp.Application;
 using ProcessingApp.Application.Interfaces;
-using ProcessingApp.Domain;
-using System;
-using System.Collections.Generic;
+
 using System.Windows;
+using Serilog;
+
 
 namespace ProcessingApp.Presentation
 {
@@ -55,6 +55,7 @@ namespace ProcessingApp.Presentation
             }
             catch (Exception ex)
             {
+                Log.Error(ex, "Ошибка при импорте CSV файла");
                 MessageBox.Show($"Ошибка при импорте: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
@@ -102,6 +103,7 @@ namespace ProcessingApp.Presentation
             }
             catch (Exception ex)
             {
+                Log.Error(ex, "Ошибка при экспорте в Excel");
                 MessageBox.Show($"Ошибка при экспорте в Excel: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
                 StatusLabel.Text = "Ошибка";
             }
@@ -137,6 +139,7 @@ namespace ProcessingApp.Presentation
             }
             catch (Exception ex)
             {
+                Log.Error(ex, "Ошибка при экспорте в XML");
                 MessageBox.Show($"Ошибка при экспорте в XML: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
                 StatusLabel.Text = "Ошибка";
             }
@@ -171,6 +174,7 @@ namespace ProcessingApp.Presentation
             }
             catch (Exception ex)
             {
+                Log.Error(ex, "Ошибка при фильтрации данных");
                 MessageBox.Show($"Ошибка при фильтрации: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
                 StatusLabel.Text = "Ошибка";
             }

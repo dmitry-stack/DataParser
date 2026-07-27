@@ -4,6 +4,7 @@ using ProcessingApp.Infrastructure;
 using System.Configuration;
 using System.Data;
 using System.Windows;
+using Serilog;
 
 
 namespace ProcessingApp.Presentation
@@ -16,7 +17,12 @@ namespace ProcessingApp.Presentation
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
+            Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.Information()
+                .WriteTo.File("logs/log-.txt", rollingInterval: RollingInterval.Day)
+                .CreateLogger();
 
+            Log.Information("Приложение запущено");
 
             try
             {
@@ -25,15 +31,10 @@ namespace ProcessingApp.Presentation
                     context.Database.EnsureCreated();
                 }
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
-                MessageBox.Show($"Критическая ошибка:\n{ex.Message}\n",
-                                "Ошибка инициализации",
-                                MessageBoxButton.OK,
-                                MessageBoxImage.Error);
-
-                Current.Shutdown();
-                return; 
+             
+                Log.Fatal(ex, "Критическая ошибка при запуске приложения");
             }
             var repository = new RecordRepository();
             var excelExporter = new ExcelExporter();

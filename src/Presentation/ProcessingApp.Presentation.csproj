@@ -9,6 +9,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Infrastructure\ProcessingApp.Infrastructure.csproj" />
     <ProjectReference Include="..\ProcessingApp.Application\ProcessingApp.Application.csproj" />
   </ItemGroup>

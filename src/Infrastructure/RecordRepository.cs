@@ -10,7 +10,7 @@ namespace ProcessingApp.Infrastructure
 {
     public class RecordRepository: IRecordRepository
     {
-        public async IAsyncEnumerable<RecordDTO> GetFilteredRecordsAsync(DateTime? date, string? firstName, string? surName, string? country, string? city, string? lastName)
+        public async IAsyncEnumerable<RecordDTO> GetFilteredRecordsAsync(DateTime? date, string? firstName, string? surName, string? country, string? city, string? lastName, int limit = 400)
         {
             using var context = new AppDbContext();
 
@@ -31,8 +31,9 @@ namespace ProcessingApp.Infrastructure
                 LastName = x.LastName,
                 SurName = x.SurName,
                 City = x.City,
-                Country = x.Country
-            }).AsAsyncEnumerable();
+                Country = x.Country,
+          
+            }).Take(limit).AsAsyncEnumerable();
 
             await foreach (var record in stream)
             {

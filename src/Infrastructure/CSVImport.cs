@@ -21,29 +21,42 @@ public class CSVImport : ICsvImporter
     public async Task ImportCsvAsync(string filePath)
     {
         using var context = new AppDbContext();
-       
 
-        var batch = new List<Record>();
-    
-
-        await foreach(var dto in ReadRecordsFromCsvAsync(filePath))
+        using var transaction = await context.Database.BeginTransactionAsync();
+        try
         {
-            var entity = MapToEntity(dto);
-            batch.Add(entity);
+            var batch = new List<Record>();
 
-            if (batch.Count >= BatchSize)
+         
+
+            await foreach (var dto in ReadRecordsFromCsvAsync(filePath))
+            {
+
+                var entity = MapToEntity(dto);
+                batch.Add(entity);
+               
+               
+
+                if (batch.Count >= BatchSize)
+                {
+                    await context.Records.AddRangeAsync(batch);
+                    await context.SaveChangesAsync();
+                    batch.Clear();
+                }
+
+
+            }
+
+            if (batch.Count > 0)
             {
                 await context.Records.AddRangeAsync(batch);
                 await context.SaveChangesAsync();
-                batch.Clear();
             }
-            
-
+            await transaction.CommitAsync();
         }
-        if (batch.Count > 0)
+        catch
         {
-            await context.Records.AddRangeAsync(batch);
-            await context.SaveChangesAsync();
+            await transaction.RollbackAsync(); throw;
         }
 
 

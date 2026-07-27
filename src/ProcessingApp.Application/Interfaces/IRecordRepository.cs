@@ -7,5 +7,5 @@ namespace ProcessingApp.Application.Interfaces;
 
 public interface IRecordRepository
 {
-    IAsyncEnumerable<RecordDTO> GetFilteredRecordsAsync(DateTime? date, string? firstName, string? surName, string? country, string? city, string? lastName);
+    IAsyncEnumerable<RecordDTO> GetFilteredRecordsAsync(DateTime? date, string? firstName, string? surName, string? country, string? city, string? lastName, int limit = 400);
 }
