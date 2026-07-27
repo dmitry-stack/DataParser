@@ -1,10 +1,11 @@
 
 using ProcessingApp.Application;
 using ProcessingApp.Infrastructure;
+using ProcessingApp.Presentation.ViewModels;
+using Serilog;
 using System.Configuration;
 using System.Data;
 using System.Windows;
-using Serilog;
 
 
 namespace ProcessingApp.Presentation
@@ -41,7 +42,9 @@ namespace ProcessingApp.Presentation
             var xmlExporter = new XmlExporter();
             var csvImporter = new CSVImport();
 
-            var mainWindow = new MainWindow(repository, excelExporter, xmlExporter, csvImporter);
+            var mainModel = new MainViewModel(repository, excelExporter, xmlExporter, csvImporter);
+
+            var mainWindow = new MainWindow(mainModel);
             mainWindow.Show();
         }
     }

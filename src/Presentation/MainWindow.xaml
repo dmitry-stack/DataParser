@@ -17,7 +17,7 @@
 
         <GroupBox Header="1. Импорт исходных данных" Grid.Row="0" Margin="0,0,0,15" Padding="10">
             <StackPanel Orientation="Horizontal">
-                <Button Name="Choose_File_Btn" Content="Выбрать и загрузить CSV файл" Padding="10,5" Click="Choose_File_Btn_Click"/>
+                <Button Name="Choose_File_Btn" Command="{Binding ImportCsvCommand}" Content="Выбрать и загрузить CSV файл" Padding="10,5" />
                
             </StackPanel>
         </GroupBox>
@@ -27,12 +27,12 @@
                 <UniformGrid Columns="2" VerticalAlignment="Top">
                     <StackPanel Margin="5">
                         <Label Content="Фамилия:"/>
-                        <TextBox Name="LastNameTextBox" Padding="3"/>
+                        <TextBox Name="LastNameTextBox" Padding="3" Text="{Binding LastName, UpdateSourceTrigger=PropertyChanged}" />
                     </StackPanel>
 
                     <StackPanel Margin="5">
                         <Label Content="Имя:"/>
-                        <TextBox Name="FirstNameTextBox" Padding="3"/>
+                        <TextBox Name="FirstNameTextBox" Padding="3" Text="{Binding FirstName, UpdateSourceTrigger=PropertyChanged}" />
                     </StackPanel>
 
                     <StackPanel Margin="5">
@@ -59,7 +59,7 @@
         </GroupBox>
 
         <GroupBox Header="3. Предварительный просмотр данных" Grid.Row="2" Margin="0,0,0,15" Padding="5">
-            <DataGrid Name="MyDataGrid" AutoGenerateColumns="True" IsReadOnly="True" GridLinesVisibility="Horizontal" Background="White"/>
+            <DataGrid ItemsSource="{Binding Records}" Name="MyDataGrid" AutoGenerateColumns="True" IsReadOnly="True" GridLinesVisibility="Horizontal" Background="White"/>
         </GroupBox>
 
 
@@ -74,9 +74,9 @@
             </StackPanel>
 
             <StackPanel Grid.Column="1" Orientation="Horizontal">
-                <Button Name="CheckFilterBtn" Content="Найти в базе (Проверка)" Margin="0,0,10,0" Padding="15,7" Background="#DDEBF7" Click="CheckFilterBtn_Click"/>
-                <Button Name="ExportExcelBtn" Content="Экспорт в Excel" Margin="0,0,10,0" Padding="15,7" Background="#E2F0D9" Click="ExportExcelBtn_Click"/>
-                <Button Name="ExportXmlBtn" Content="Экспорт в XML" Padding="15,7" Background="#FFF2CC" Click="ExportXmlBtn_Click"/>
+                <Button Name="CheckFilterBtn" Content="Найти в базе (Проверка)" Margin="0,0,10,0" Padding="15,7" Background="#DDEBF7" Command="{Binding SearchCommand}"/>
+                <Button Name="ExportExcelBtn" Command="{Binding ExportExcelCommand}" Content="Экспорт в Excel" Margin="0,0,10,0" Padding="15,7" Background="#E2F0D9" />
+                <Button Name="ExportXmlBtn" Command="{Binding ExportXmlCommand}" Content="Экспорт в XML" Padding="15,7" Background="#FFF2CC"/>
             </StackPanel>
         </Grid>
 
