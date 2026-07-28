@@ -1,51 +1,38 @@
-
-using ProcessingApp.Application;
+using Microsoft.Extensions.DependencyInjection;
+using ProcessingApp.Application.Interfaces; 
 using ProcessingApp.Infrastructure;
-using ProcessingApp.Presentation.ViewModels;
-using Serilog;
-using System.Configuration;
-using System.Data;
-using System.Windows;
 
+using ProcessingApp.Presentation.ViewModels;
+using System.Windows;
 
 namespace ProcessingApp.Presentation
 {
-    /// <summary>
-    /// Interaction logic for App.xaml
-    /// </summary>
     public partial class App : System.Windows.Application
     {
+        private ServiceProvider _serviceProvider;
+
+        public App()
+        {
+            var services = new ServiceCollection();
+
+      
+            services.AddTransient<IRecordRepository, RecordRepository>();
+            services.AddTransient<ICsvImporter, CSVImport>();
+            services.AddTransient<IExcelExporter, ExcelExporter>();
+            services.AddTransient<IXmlExporter, XmlExporter>();
+
+            services.AddTransient<MainViewModel>();
+
+            services.AddTransient<MainWindow>();
+
+            _serviceProvider = services.BuildServiceProvider();
+        }
+
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
-            Log.Logger = new LoggerConfiguration()
-                .MinimumLevel.Information()
-                .WriteTo.File("logs/log-.txt", rollingInterval: RollingInterval.Day)
-                .CreateLogger();
-
-            Log.Information("Приложение запущено");
-
-            try
-            {
-                using (var context = new AppDbContext())
-                {
-                    context.Database.EnsureCreated();
-                }
-            }
-            catch (Exception ex)
-            {
-             
-                Log.Fatal(ex, "Критическая ошибка при запуске приложения");
-            }
-            var repository = new RecordRepository();
-            var excelExporter = new ExcelExporter();
-            var xmlExporter = new XmlExporter();
-            var csvImporter = new CSVImport();
-
-            var mainModel = new MainViewModel(repository, excelExporter, xmlExporter, csvImporter);
-
-            var mainWindow = new MainWindow(mainModel);
+            var mainWindow = _serviceProvider.GetRequiredService<MainWindow>();
             mainWindow.Show();
         }
     }
-        }
+}

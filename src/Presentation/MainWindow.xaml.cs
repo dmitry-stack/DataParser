@@ -1,11 +1,12 @@
-using System.Windows;
+using MahApps.Metro.Controls;
 using ProcessingApp.Presentation.ViewModels;
+using System.Windows;
 
 namespace ProcessingApp.Presentation
 {
-    public partial class MainWindow : Window
+    public partial class MainWindow : MetroWindow
     {
-        internal MainWindow(MainViewModel viewModel)
+        public MainWindow(MainViewModel viewModel)
         {
             InitializeComponent();
             this.DataContext = viewModel;
