@@ -18,11 +18,17 @@ public class CSVImport : ICsvImporter
     private const string DateFormat = "dd.MM.yyyy";
     private const int BatchSize = 5000;
     private const int ExpectedFieldsCount = 6;
+    private readonly AppDbContext _context;
+
+    public CSVImport(AppDbContext context)
+    {
+        _context = context; 
+    }
     public async Task ImportCsvAsync(string filePath)
     {
-        using var context = new AppDbContext();
+       
 
-        using var transaction = await context.Database.BeginTransactionAsync();
+        using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
             var batch = new List<Record>();
@@ -39,8 +45,8 @@ public class CSVImport : ICsvImporter
 
                 if (batch.Count >= BatchSize)
                 {
-                    await context.Records.AddRangeAsync(batch);
-                    await context.SaveChangesAsync();
+                    await _context.Records.AddRangeAsync(batch);
+                    await _context.SaveChangesAsync();
                     batch.Clear();
                 }
 
@@ -49,8 +55,8 @@ public class CSVImport : ICsvImporter
 
             if (batch.Count > 0)
             {
-                await context.Records.AddRangeAsync(batch);
-                await context.SaveChangesAsync();
+                await _context.Records.AddRangeAsync(batch);
+                await _context.SaveChangesAsync();
             }
             await transaction.CommitAsync();
         }

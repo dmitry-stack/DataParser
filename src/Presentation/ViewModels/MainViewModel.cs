@@ -4,11 +4,8 @@ using Microsoft.Win32;
 using ProcessingApp.Application;
 using ProcessingApp.Application.Interfaces;
 using Serilog;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using System;
+
 
 namespace ProcessingApp.Presentation.ViewModels
 {
@@ -61,15 +58,21 @@ namespace ProcessingApp.Presentation.ViewModels
 
         private async Task SearchAsync()
         {
-            
-            Records.Clear();
 
-            var result = _repository.GetFilteredRecordsAsync(Date, FirstName, SurName, City, Country, LastName);
-
-            await foreach (var record in result)
+            try
             {
-                Records.Add(record);
-              
+                Records.Clear();
+                var result = _repository.GetFilteredRecordsAsync(Date, FirstName, SurName, City, Country, LastName);
+
+                await foreach (var record in result)
+                {
+                    Records.Add(record);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Ошибка при поиске записей в БД.");
+                System.Windows.MessageBox.Show("Не удалось выполнить поиск. Проверьте подключение к базе данных.", "Ошибка БД", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
             }
 
         }

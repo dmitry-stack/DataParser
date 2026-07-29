@@ -10,11 +10,17 @@ namespace ProcessingApp.Infrastructure
 {
     public class RecordRepository: IRecordRepository
     {
+        private readonly AppDbContext _context;
+
+        public RecordRepository(AppDbContext context)
+        {
+            _context = context; 
+        }
         public async IAsyncEnumerable<RecordDTO> GetFilteredRecordsAsync(DateTime? date, string? firstName, string? surName, string? country, string? city, string? lastName, int limit = 400)
         {
-            using var context = new AppDbContext();
+           
 
-            IQueryable<Record> query = context.Records.AsNoTracking();
+            IQueryable<Record> query = _context.Records.AsNoTracking();
 
             if (!string.IsNullOrWhiteSpace(city)) query = query.Where(x => x.City == city.Trim());
             if (!string.IsNullOrWhiteSpace(lastName)) query = query.Where(x => x.LastName == lastName.Trim());
