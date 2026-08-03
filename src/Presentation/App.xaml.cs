@@ -61,11 +61,25 @@ namespace ProcessingApp.Presentation
         {
             base.OnStartup(e);
 
-            using (var scope = _serviceProvider.CreateScope())
+            try
             {
-                var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                Log.Information("Проверка и инициализация базы данных...");
+                using (var scope = _serviceProvider.CreateScope())
+                {
+                    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                    dbContext.Database.EnsureCreated();
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Fatal(ex, "Критическая ошибка при подключении к базе данных или её создании.");
+                MessageBox.Show("Не удалось подключиться к базе данных. Проверьте настройки SQL Server.\n\nПодробности записаны в файл логов.",
+                                "Критическая ошибка запуска",
+                                MessageBoxButton.OK,
+                                MessageBoxImage.Error);
 
-                dbContext.Database.EnsureCreated();
+                Current.Shutdown(); 
+                return; 
             }
 
             var mainWindow = _serviceProvider.GetRequiredService<MainWindow>();

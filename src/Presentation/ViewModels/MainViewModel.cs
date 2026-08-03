@@ -3,10 +3,14 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
 using ProcessingApp.Application;
 using ProcessingApp.Application.Interfaces;
+using ProcessingApp.Presentation.Localization;
 using Serilog;
+using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
-
 
 namespace ProcessingApp.Presentation.ViewModels
 {
@@ -51,15 +55,19 @@ namespace ProcessingApp.Presentation.ViewModels
             foreach (var record in Records)
             {
                 yield return record;
-                await Task.Yield(); 
+                await Task.Yield();
             }
         }
 
         [RelayCommand]
+        private void SetLanguage(string cultureCode)
+        {
+            Strings.Instance.SetLanguage(cultureCode == "en" ? AppLanguage.English : AppLanguage.Russian);
+        }
 
+        [RelayCommand]
         private async Task SearchAsync()
         {
-
             try
             {
                 Records.Clear();
@@ -73,9 +81,12 @@ namespace ProcessingApp.Presentation.ViewModels
             catch (Exception ex)
             {
                 Log.Error(ex, "Ошибка при поиске записей в БД.");
-                System.Windows.MessageBox.Show("Не удалось выполнить поиск. Проверьте подключение к базе данных.", "Ошибка БД", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                MessageBox.Show(
+                    Strings.Instance.SearchErrorMessage,
+                    Strings.Instance.SearchErrorTitle,
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
             }
-
         }
 
         [RelayCommand(IncludeCancelCommand = true)]
@@ -87,37 +98,34 @@ namespace ProcessingApp.Presentation.ViewModels
             {
                 try
                 {
-                 
                     await _csvImporter.ImportCsvAsync(dialog.FileName, token);
 
-                    System.Windows.MessageBox.Show("Данные успешно импортированы!", "Успех", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+                    MessageBox.Show(
+                        Strings.Instance.ImportSuccessMessage,
+                        Strings.Instance.ImportSuccessTitle,
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
 
                     await SearchAsync();
                 }
                 catch (OperationCanceledException)
                 {
-                  
                     Log.Information("Импорт CSV был отменен пользователем.");
-                    MessageBox.Show("Импорт отменен.", "Отмена", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    MessageBox.Show(
+                        Strings.Instance.ImportCancelledMessage,
+                        Strings.Instance.ImportCancelledTitle,
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
                 }
                 catch (Exception ex)
                 {
                     Log.Error(ex, "Ошибка при импорте файла: {FileName}", dialog.FileName);
-                    System.Windows.MessageBox.Show("Произошла ошибка при импорте. Подробности в логах.", "Ошибка", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                    MessageBox.Show(
+                        Strings.Instance.ImportErrorMessage,
+                        Strings.Instance.ImportErrorTitle,
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
                 }
-                //catch (Exception ex)
-                //{
-                //    Log.Error(ex, "Ошибка при импорте файла: {FileName}", dialog.FileName);
-
-
-                //    string errorMessage = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
-
-
-                //    System.Windows.MessageBox.Show($"Произошла ошибка при сохранении в БД!\n\nПодробности:\n{errorMessage}",
-                //                                   "Ошибка импорта",
-                //                                   System.Windows.MessageBoxButton.OK,
-                //                                   System.Windows.MessageBoxImage.Error);
-                //}
             }
         }
 
@@ -131,12 +139,12 @@ namespace ProcessingApp.Presentation.ViewModels
                 try
                 {
                     await _excelExporter.ExportToExcelAsync(GetRecordsAsync(), dialog.FileName);
-                    System.Windows.MessageBox.Show("Файл Excel сохранен!", "Успех");
+                    MessageBox.Show(Strings.Instance.ExportExcelSuccessMessage, Strings.Instance.ExportSuccessTitle);
                 }
                 catch (Exception ex)
                 {
                     Log.Error(ex, "Ошибка при экспорте в Excel");
-                    System.Windows.MessageBox.Show("Ошибка при экспорте. Подробности в логах.", "Ошибка");
+                    MessageBox.Show(Strings.Instance.ExportErrorMessage, Strings.Instance.ExportErrorTitle);
                 }
             }
         }
@@ -151,16 +159,14 @@ namespace ProcessingApp.Presentation.ViewModels
                 try
                 {
                     await _xmlExporter.ExportToXmlAsync(GetRecordsAsync(), dialog.FileName);
-                    System.Windows.MessageBox.Show("Файл XML сохранен!", "Успех");
+                    MessageBox.Show(Strings.Instance.ExportXmlSuccessMessage, Strings.Instance.ExportSuccessTitle);
                 }
                 catch (Exception ex)
                 {
                     Log.Error(ex, "Ошибка при экспорте в XML");
-                    System.Windows.MessageBox.Show("Ошибка при экспорте. Подробности в логах.", "Ошибка");
+                    MessageBox.Show(Strings.Instance.ExportErrorMessage, Strings.Instance.ExportErrorTitle);
                 }
             }
         }
-
-       
     }
 }
