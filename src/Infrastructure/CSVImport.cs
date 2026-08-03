@@ -1,127 +1,96 @@
-﻿using Microsoft.VisualBasic;
+﻿using CsvHelper;
+using CsvHelper.Configuration;
 using ProcessingApp.Application.Interfaces;
-using ProcessingApp.Domain;
-using ProcessingApp.Application;
+using Serilog;
+using System.Globalization;
+
 using System;
 using System.Collections.Generic;
+
 using System.IO;
-using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
-
-namespace ProcessingApp.Infrastructure;
-
-public class CSVImport : ICsvImporter
+namespace ProcessingApp.Infrastructure
 {
-
-    private const char CsvSeparator = ';';
-    private const string DateFormat = "dd.MM.yyyy";
-    private const int BatchSize = 5000;
-    private const int ExpectedFieldsCount = 6;
-    private readonly AppDbContext _context;
-
-    public CSVImport(AppDbContext context)
+    public class CSVImport : ICsvImporter
     {
-        _context = context; 
-    }
-    public async Task ImportCsvAsync(string filePath)
-    {
-       
+        private readonly AppDbContext _context;
 
-        using var transaction = await _context.Database.BeginTransactionAsync();
-        try
+        public CSVImport(AppDbContext context)
         {
-            var batch = new List<Record>();
+            _context = context;
+        }
 
-         
-
-            await foreach (var dto in ReadRecordsFromCsvAsync(filePath))
+        public async Task ImportCsvAsync(string filePath, CancellationToken token = default)
+        {
+            var config = new CsvConfiguration(new CultureInfo("ru-RU"))
             {
+                Delimiter = ";",
+                HasHeaderRecord = true,
+                MissingFieldFound = null
+            };
 
-                var entity = MapToEntity(dto);
-                batch.Add(entity);
-               
-               
+            using var reader = new StreamReader(filePath);
+            using var csv = new CsvReader(reader, config);
 
-                if (batch.Count >= BatchSize)
+            var recordsToAdd = new List<ProcessingApp.Domain.Record>(); 
+            int rowNumber = 1;
+
+            await csv.ReadAsync();
+            csv.ReadHeader();
+
+            while (await csv.ReadAsync())
+            {
+             
+                token.ThrowIfCancellationRequested();
+                rowNumber++;
+
+                try
                 {
-                    await _context.Records.AddRangeAsync(batch);
-                    await _context.SaveChangesAsync();
-                    batch.Clear();
+                   
+                    var record = new ProcessingApp.Domain.Record
+                    {
+
+                        Date = csv.GetField<DateTime>("Дата"),
+                        FirstName = csv.GetField<string>("Имя"),
+                        LastName = csv.GetField<string>("Фамилия"),
+                        SurName = csv.GetField<string>("Отчество"),
+                        City = csv.GetField<string>("Город"),
+                        Country = csv.GetField<string>("Страна")
+                    };
+                    if (string.IsNullOrWhiteSpace(record.LastName))
+                    {
+                        Log.Warning("Пропущена строка {Row}: Отсутствует обязательное поле LastName.", rowNumber);
+                        continue;
+                    }
+
+                    recordsToAdd.Add(record);
                 }
-
-
-            }
-
-            if (batch.Count > 0)
-            {
-                await _context.Records.AddRangeAsync(batch);
-                await _context.SaveChangesAsync();
-            }
-            await transaction.CommitAsync();
-        }
-        catch
-        {
-            await transaction.RollbackAsync(); throw;
-        }
-
-
-    }
-
-    private async IAsyncEnumerable<RecordDTO> ReadRecordsFromCsvAsync(string filePath)
-    {
-        using var reader = new StreamReader(filePath, Encoding.UTF8);
-
-        await reader.ReadLineAsync();
-
-        string? line;
-        while ((line = await reader.ReadLineAsync()) != null)
-        {
-            if (string.IsNullOrWhiteSpace(line)) continue;
-
-            var dto = ParseLineToDto(line);
-            if (dto != null)
-            {
+                catch (Exception ex)
+                {
                
-                yield return dto;
+                    Log.Warning(ex, "Ошибка парсинга CSV на строке {Row}. Сырые данные: {RawRecord}", rowNumber, csv.Parser.RawRecord);
+                }
+            }
+
+            if (recordsToAdd.Count > 0)
+            {
+                try
+                {
+                    await _context.Records.AddRangeAsync(recordsToAdd, token);
+                    await _context.SaveChangesAsync(token);
+
+                    Log.Information("Успешно импортировано {Count} записей.", recordsToAdd.Count);
+                }
+                catch (Microsoft.EntityFrameworkCore.DbUpdateException dbEx)
+                {
+                   
+                    string exactError = dbEx.InnerException != null ? dbEx.InnerException.Message : dbEx.Message;
+                    Log.Error(dbEx, "База данных отклонила сохранение! Причина SQL: {SqlError}", exactError);
+                    throw;
+                }
             }
         }
-    }
-
-   
-
-    private RecordDTO? ParseLineToDto(string line)
-    {
-        var parts = line.Split(CsvSeparator);
-        if (parts.Length < ExpectedFieldsCount) return null;
-
-        
-        if (!DateTime.TryParseExact(parts[0], DateFormat, null, System.Globalization.DateTimeStyles.None, out DateTime parsedDate))
-        {
-            return null; 
-        }
-
-        return new RecordDTO
-        {
-            Date = parsedDate,
-            FirstName = parts[1].Trim(),
-            LastName = parts[2].Trim(),
-            SurName = parts[3].Trim(),
-            City = parts[4].Trim(),
-            Country = parts[5].Trim()
-        };
-    }
-
-    private Record MapToEntity(RecordDTO dto)
-    {
-        return new Record
-        {
-            Date = dto.Date,
-            FirstName = dto.FirstName,
-            LastName = dto.LastName,
-            SurName = dto.SurName,
-            City = dto.City,
-            Country = dto.Country
-        };
     }
 }

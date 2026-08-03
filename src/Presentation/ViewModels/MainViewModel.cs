@@ -5,6 +5,7 @@ using ProcessingApp.Application;
 using ProcessingApp.Application.Interfaces;
 using Serilog;
 using System.Collections.ObjectModel;
+using System.Windows;
 
 
 namespace ProcessingApp.Presentation.ViewModels
@@ -77,8 +78,8 @@ namespace ProcessingApp.Presentation.ViewModels
 
         }
 
-        [RelayCommand]
-        private async Task ImportCsvAsync()
+        [RelayCommand(IncludeCancelCommand = true)]
+        private async Task ImportCsvAsync(CancellationToken token)
         {
             var dialog = new OpenFileDialog { Filter = "CSV Files (*.csv)|*.csv" };
 
@@ -87,17 +88,36 @@ namespace ProcessingApp.Presentation.ViewModels
                 try
                 {
                  
-                    await _csvImporter.ImportCsvAsync(dialog.FileName);
+                    await _csvImporter.ImportCsvAsync(dialog.FileName, token);
 
                     System.Windows.MessageBox.Show("Данные успешно импортированы!", "Успех", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
 
                     await SearchAsync();
+                }
+                catch (OperationCanceledException)
+                {
+                  
+                    Log.Information("Импорт CSV был отменен пользователем.");
+                    MessageBox.Show("Импорт отменен.", "Отмена", MessageBoxButton.OK, MessageBoxImage.Warning);
                 }
                 catch (Exception ex)
                 {
                     Log.Error(ex, "Ошибка при импорте файла: {FileName}", dialog.FileName);
                     System.Windows.MessageBox.Show("Произошла ошибка при импорте. Подробности в логах.", "Ошибка", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
                 }
+                //catch (Exception ex)
+                //{
+                //    Log.Error(ex, "Ошибка при импорте файла: {FileName}", dialog.FileName);
+
+
+                //    string errorMessage = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
+
+
+                //    System.Windows.MessageBox.Show($"Произошла ошибка при сохранении в БД!\n\nПодробности:\n{errorMessage}",
+                //                                   "Ошибка импорта",
+                //                                   System.Windows.MessageBoxButton.OK,
+                //                                   System.Windows.MessageBoxImage.Error);
+                //}
             }
         }
 

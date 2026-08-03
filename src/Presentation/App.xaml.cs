@@ -8,6 +8,8 @@ using Microsoft.EntityFrameworkCore;
 
 using ProcessingApp.Presentation.ViewModels;
 using System.Windows;
+using Serilog;
+using Serilog.Events;
 
 namespace ProcessingApp.Presentation
 {
@@ -23,6 +25,16 @@ namespace ProcessingApp.Presentation
                 .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
             Configuration = builder.Build();
 
+           
+            Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.Information() 
+                .WriteTo.Debug()
+                .WriteTo.File("logs/app_log.txt",
+                    rollingInterval: RollingInterval.Day,
+                    outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
+                .CreateLogger();
+            Log.Information("Приложение запускается");
+
             var services = new ServiceCollection();
 
             services.AddDbContext<AppDbContext>(options =>
@@ -37,6 +49,13 @@ namespace ProcessingApp.Presentation
             services.AddTransient<MainWindow>();
 
             _serviceProvider = services.BuildServiceProvider();
+        }
+        protected override void OnExit(ExitEventArgs e)
+        {
+         
+            Log.Information("Приложение завершается");
+            Log.CloseAndFlush();
+            base.OnExit(e);
         }
         protected override void OnStartup(StartupEventArgs e)
         {
