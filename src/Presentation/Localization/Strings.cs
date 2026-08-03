@@ -9,13 +9,7 @@ namespace ProcessingApp.Presentation.Localization
         English
     }
 
-    /// <summary>
-    /// Хранилище строк локализации UI. Без .resx/ResGen — строки лежат
-    /// в обычных словарях по языкам. Singleton реализует
-    /// INotifyPropertyChanged: при смене языка все XAML-биндинги,
-    /// у которых Source указывает на Strings.Instance, обновляются
-    /// сразу, без перезапуска приложения.
-    /// </summary>
+  
     public sealed class Strings : INotifyPropertyChanged
     {
         public static Strings Instance { get; } = new Strings();
@@ -39,8 +33,7 @@ namespace ProcessingApp.Presentation.Localization
 
             _language = language;
 
-            // Пустая строка в PropertyChangedEventArgs — стандартная конвенция
-            // WPF "обновить все биндинги, читающие свойства этого объекта".
+
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(string.Empty));
         }
 
