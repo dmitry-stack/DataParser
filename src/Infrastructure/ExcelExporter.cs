@@ -1,17 +1,13 @@
 ﻿using ClosedXML.Excel;
+using ProcessingApp.Application.DTOs;
 using ProcessingApp.Application.Interfaces;
-using ProcessingApp.Application;
-using ProcessingApp.Domain;
-using ProcessingApp.Infrastructure;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace ProcessingApp.Infrastructure
 {
-    public class ExcelExporter : IExcelExporter
+    public class ExcelExporter : IExporter
     {
-        public async Task ExportToExcelAsync(IAsyncEnumerable<RecordDTO> records, string filePath)
+        public string SupportedExtension => ".xlsx";
+        public async Task ExportAsync(IAsyncEnumerable<RecordDTO> records, string filePath, CancellationToken token = default)
         {
             using var workbook = new XLWorkbook();
             var worksheet = workbook.Worksheets.Add("Экспорт Данных");

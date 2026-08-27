@@ -1,11 +1,12 @@
-﻿using ProcessingApp.Application;
-using ProcessingApp.Domain;
-using System;
-using System.Collections.Generic;
+﻿using ProcessingApp.Application.DTOs;
 
 namespace ProcessingApp.Application.Interfaces;
 
 public interface IRecordRepository
 {
-    IAsyncEnumerable<RecordDTO> GetFilteredRecordsAsync(DateTime? date, string? firstName, string? surName, string? country, string? city, string? lastName, int limit = 400);
+    IAsyncEnumerable<RecordDTO> GetFilteredRecordsAsync(DateTime? date,
+        string? firstName, string? surName, string? country,
+        string? city, string? lastName,
+        int pageNumber = 1,
+        int pageSize = 50);
 }

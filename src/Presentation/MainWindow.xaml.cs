@@ -1,6 +1,5 @@
 using MahApps.Metro.Controls;
 using ProcessingApp.Presentation.ViewModels;
-using System.Windows;
 
 namespace ProcessingApp.Presentation
 {

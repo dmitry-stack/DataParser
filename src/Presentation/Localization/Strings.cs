@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 
 namespace ProcessingApp.Presentation.Localization
 {
@@ -9,7 +8,7 @@ namespace ProcessingApp.Presentation.Localization
         English
     }
 
-  
+
     public sealed class Strings : INotifyPropertyChanged
     {
         public static Strings Instance { get; } = new Strings();

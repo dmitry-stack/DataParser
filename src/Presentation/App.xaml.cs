@@ -1,15 +1,11 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using ProcessingApp.Application.Interfaces; 
+using ProcessingApp.Application.Interfaces;
 using ProcessingApp.Infrastructure;
-
-using Microsoft.Extensions.Configuration; 
-using Microsoft.EntityFrameworkCore; 
-
-
 using ProcessingApp.Presentation.ViewModels;
-using System.Windows;
 using Serilog;
-using Serilog.Events;
+using System.Windows;
 
 namespace ProcessingApp.Presentation
 {
@@ -19,15 +15,15 @@ namespace ProcessingApp.Presentation
         public IConfiguration Configuration { get; private set; }
         public App()
         {
-           
+
             var builder = new ConfigurationBuilder()
                 .SetBasePath(System.AppDomain.CurrentDomain.BaseDirectory)
                 .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
             Configuration = builder.Build();
 
-           
+
             Log.Logger = new LoggerConfiguration()
-                .MinimumLevel.Information() 
+                .MinimumLevel.Information()
                 .WriteTo.Debug()
                 .WriteTo.File("logs/app_log.txt",
                     rollingInterval: RollingInterval.Day,
@@ -42,8 +38,8 @@ namespace ProcessingApp.Presentation
 
             services.AddTransient<IRecordRepository, RecordRepository>();
             services.AddTransient<ICsvImporter, CSVImport>();
-            services.AddTransient<IExcelExporter, ExcelExporter>();
-            services.AddTransient<IXmlExporter, XmlExporter>();
+            services.AddTransient<IExporter, ExcelExporter>();
+            services.AddTransient<IExporter, XmlExporter>();
 
             services.AddTransient<MainViewModel>();
             services.AddTransient<MainWindow>();
@@ -52,7 +48,7 @@ namespace ProcessingApp.Presentation
         }
         protected override void OnExit(ExitEventArgs e)
         {
-         
+
             Log.Information("Приложение завершается");
             Log.CloseAndFlush();
             base.OnExit(e);
@@ -78,8 +74,8 @@ namespace ProcessingApp.Presentation
                                 MessageBoxButton.OK,
                                 MessageBoxImage.Error);
 
-                Current.Shutdown(); 
-                return; 
+                Current.Shutdown();
+                return;
             }
 
             var mainWindow = _serviceProvider.GetRequiredService<MainWindow>();
