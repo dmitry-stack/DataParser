@@ -1,7 +1,7 @@
 ﻿using CsvHelper;
 using CsvHelper.Configuration;
 using ProcessingApp.Application.Interfaces;
-using ProcessingApp.Domain; // Убедись, что тут правильный using для твоего класса Record
+using ProcessingApp.Domain;
 using Serilog;
 using System.Globalization;
 using System.Runtime.CompilerServices;
@@ -10,12 +10,12 @@ namespace ProcessingApp.Infrastructure;
 
 public class CSVImport : ICsvImporter
 {
-    private readonly AppDbContext _context;
+    private readonly Microsoft.EntityFrameworkCore.IDbContextFactory<AppDbContext> _contextFactory;
     private const int BatchSize = 5000;
 
-    public CSVImport(AppDbContext context)
+    public CSVImport(Microsoft.EntityFrameworkCore.IDbContextFactory<AppDbContext> contextFactory)
     {
-        _context = context;
+        _contextFactory = contextFactory;
     }
 
 
@@ -56,29 +56,32 @@ public class CSVImport : ICsvImporter
             token.ThrowIfCancellationRequested();
             rowNumber++;
 
-            Record record = null;
+            Record? record = null;
 
             try
             {
                 record = new Record
                 {
                     Date = csv.GetField<DateTime>("Дата"),
-                    FirstName = csv.GetField<string>("Имя"),
-                    LastName = csv.GetField<string>("Фамилия"),
-                    SurName = csv.GetField<string>("Отчество"),
-                    City = csv.GetField<string>("Город"),
-                    Country = csv.GetField<string>("Страна")
+                    FirstName = csv.GetField<string>("Имя") ?? string.Empty,
+                    LastName = csv.GetField<string>("Фамилия") ?? string.Empty,
+                    SurName = csv.GetField<string>("Отчество") ?? string.Empty,
+                    City = csv.GetField<string>("Город") ?? string.Empty,
+                    Country = csv.GetField<string>("Страна") ?? string.Empty,
                 };
             }
             catch (Exception ex)
             {
+
                 Log.Warning(ex, "Ошибка парсинга CSV на строке {Row}. Сырые данные: {RawRecord}", rowNumber, csv.Parser.RawRecord);
                 continue;
             }
 
-            if (string.IsNullOrWhiteSpace(record.LastName))
+            if (string.IsNullOrWhiteSpace(record.LastName) ||
+                string.IsNullOrWhiteSpace(record.City) ||
+                string.IsNullOrWhiteSpace(record.Country))
             {
-                Log.Warning("Пропущена строка {Row}: Отсутствует обязательное поле LastName.", rowNumber);
+                Log.Warning("Пропущена строка {Row}: отсутствуют обязательные поля.", rowNumber);
                 continue;
             }
 
@@ -89,24 +92,25 @@ public class CSVImport : ICsvImporter
     private async Task SaveToDatabaseInBatchesAsync(IAsyncEnumerable<Record> records, CancellationToken token)
     {
         int recordsCount = 0;
+        using var context = await _contextFactory.CreateDbContextAsync(token);
 
         await foreach (var record in records.WithCancellation(token))
         {
-            _context.Records.Add(record);
+            context.Records.Add(record);
             recordsCount++;
 
             if (recordsCount % BatchSize == 0)
             {
-                await _context.SaveChangesAsync(token);
-                _context.ChangeTracker.Clear();
+                await context.SaveChangesAsync(token);
+                context.ChangeTracker.Clear();
                 Log.Information("Успешно импортировано {Count} записей...", recordsCount);
             }
         }
 
         if (recordsCount % BatchSize != 0)
         {
-            await _context.SaveChangesAsync(token);
-            _context.ChangeTracker.Clear();
+            await context.SaveChangesAsync(token);
+            context.ChangeTracker.Clear();
         }
 
         Log.Information("Импорт завершен. Всего добавлено: {Total}", recordsCount);

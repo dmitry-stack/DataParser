@@ -33,8 +33,8 @@ namespace ProcessingApp.Presentation
 
             var services = new ServiceCollection();
 
-            services.AddDbContext<AppDbContext>(options =>
-                options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
+            services.AddDbContextFactory<AppDbContext>(options => options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
+
 
             services.AddTransient<IRecordRepository, RecordRepository>();
             services.AddTransient<ICsvImporter, CSVImport>();

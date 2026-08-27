@@ -14,15 +14,14 @@ namespace ProcessingApp.Infrastructure
             var settings = new XmlWriterSettings { Indent = true, Async = true };
 
             using var writer = XmlWriter.Create(filePath, settings);
+            await writer.WriteStartDocumentAsync();
             await writer.WriteStartElementAsync(null, "Records", null);
 
             await foreach (var record in records.WithCancellation(token))
             {
                 await writer.WriteStartElementAsync(null, "Record", null);
                 await writer.WriteElementStringAsync(null, "FirstName", null, record.FirstName);
-
                 await writer.WriteElementStringAsync(null, "Date", null, record.Date.ToString("dd.MM.yyyy"));
-                await writer.WriteElementStringAsync(null, "FirstName", null, record.FirstName);
                 await writer.WriteElementStringAsync(null, "LastName", null, record.LastName);
                 await writer.WriteElementStringAsync(null, "SurName", null, record.SurName);
                 await writer.WriteElementStringAsync(null, "City", null, record.City);

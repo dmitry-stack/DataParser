@@ -46,18 +46,17 @@ public partial class MainViewModel : ObservableObject
     private int _currentPage = 1;
 
     [ObservableProperty]
-    private int _pageSize = 50;
+    private int _pageSize = 15;
 
     [ObservableProperty]
     private ObservableCollection<RecordDTO> _records = new();
 
-    private async IAsyncEnumerable<RecordDTO> GetRecordsAsync()
+    private IAsyncEnumerable<RecordDTO> GetRecordsForExportAsync()
     {
-        foreach (var record in Records)
-        {
-            yield return record;
-            await Task.Yield();
-        }
+        return _repository.GetFilteredRecordsAsync(
+            Date, FirstName, SurName, LastName, City, Country,
+            pageNumber: 1,
+            pageSize: int.MaxValue);
     }
 
     [RelayCommand]
@@ -80,6 +79,8 @@ public partial class MainViewModel : ObservableObject
             {
                 Records.Add(record);
             }
+            PreviousPageCommand.NotifyCanExecuteChanged();
+            NextPageCommand.NotifyCanExecuteChanged();
         }
         catch (Exception ex)
         {
@@ -129,6 +130,32 @@ public partial class MainViewModel : ObservableObject
         }
     }
 
+    private bool CanGoPrevious() => CurrentPage > 1;
+
+    [RelayCommand(CanExecute = nameof(CanGoPrevious))]
+    private async Task PreviousPageAsync()
+    {
+        CurrentPage--;
+        await SearchAsync();
+    }
+
+    private bool CanGoNext() => Records.Count == PageSize;
+
+    [RelayCommand(CanExecute = nameof(CanGoNext))]
+    private async Task NextPageAsync()
+    {
+        CurrentPage++;
+        await SearchAsync();
+    }
+
+
+    [RelayCommand]
+    private async Task ExecuteNewSearchAsync()
+    {
+
+        CurrentPage = 1;
+        await SearchAsync();
+    }
     [RelayCommand]
     private async Task ExportExcelAsync()
     {
@@ -146,7 +173,7 @@ public partial class MainViewModel : ObservableObject
                     return;
                 }
 
-                await exporter.ExportAsync(GetRecordsAsync(), dialog.FileName);
+                await exporter.ExportAsync(GetRecordsForExportAsync(), dialog.FileName);
                 System.Windows.MessageBox.Show("Файл Excel сохранен!", "Успех");
             }
             catch (Exception ex)
@@ -175,7 +202,7 @@ public partial class MainViewModel : ObservableObject
                     return;
                 }
 
-                await exporter.ExportAsync(GetRecordsAsync(), dialog.FileName);
+                await exporter.ExportAsync(GetRecordsForExportAsync(), dialog.FileName);
                 System.Windows.MessageBox.Show("Файл XML сохранен!", "Успех");
             }
             catch (Exception ex)
