@@ -24,7 +24,7 @@ namespace ProcessingApp.Infrastructure
 
             int currentRow = 2;
 
-            await foreach (var record in records)
+            await foreach (var record in records.WithCancellation(token))
             {
                 worksheet.Cell(currentRow, 1).Value = currentRow - 1;
                 worksheet.Cell(currentRow, 2).Value = record.Date.ToString("dd.MM.yyyy");

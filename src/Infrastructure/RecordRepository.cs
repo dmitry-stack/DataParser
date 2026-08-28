@@ -13,8 +13,8 @@ namespace ProcessingApp.Infrastructure
         }
 
         public async IAsyncEnumerable<RecordDTO> GetFilteredRecordsAsync(
-           DateTime? date, string? firstName, string? surName,
-            string? city, string? country, string? lastName,
+           DateTime? date, string? firstName, string? surName, string? lastName,
+            string? city, string? country,
             int pageNumber = 1, int pageSize = 20)
         {
             using var context = _contextFactory.CreateDbContext();
@@ -41,7 +41,7 @@ namespace ProcessingApp.Infrastructure
 
             query = query
                 .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize);
+                .Take(pageSize + 1);
 
 
             await foreach (var record in query.AsAsyncEnumerable())

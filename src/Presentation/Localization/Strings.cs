@@ -55,6 +55,10 @@ namespace ProcessingApp.Presentation.Localization
         public string ExportExcelButton => Get(nameof(ExportExcelButton));
         public string ExportXmlButton => Get(nameof(ExportXmlButton));
 
+        public string PreviousPageButton => Get(nameof(PreviousPageButton));
+        public string NextPageButton => Get(nameof(NextPageButton));
+        public string PageFormat => Get(nameof(PageFormat));
+
         public string ColumnDate => Get(nameof(ColumnDate));
         public string ColumnLastName => Get(nameof(ColumnLastName));
         public string ColumnFirstName => Get(nameof(ColumnFirstName));
@@ -77,6 +81,7 @@ namespace ProcessingApp.Presentation.Localization
         public string ExportXmlSuccessMessage => Get(nameof(ExportXmlSuccessMessage));
         public string ExportErrorTitle => Get(nameof(ExportErrorTitle));
         public string ExportErrorMessage => Get(nameof(ExportErrorMessage));
+        public string ExportMissingModuleErrorMessage => Get(nameof(ExportMissingModuleErrorMessage));
 
         public string StartupDbErrorTitle => Get(nameof(StartupDbErrorTitle));
         public string StartupDbErrorMessage => Get(nameof(StartupDbErrorMessage));
@@ -98,6 +103,9 @@ namespace ProcessingApp.Presentation.Localization
                 [nameof(CancelButton)] = "Отмена",
                 [nameof(ExportExcelButton)] = "Экспорт в Excel",
                 [nameof(ExportXmlButton)] = "Экспорт в XML",
+                [nameof(PreviousPageButton)] = "< Назад",
+                [nameof(NextPageButton)] = "Вперед >",
+                [nameof(PageFormat)] = "Страница {0}",
 
                 [nameof(ColumnDate)] = "Дата",
                 [nameof(ColumnLastName)] = "Фамилия",
@@ -121,6 +129,7 @@ namespace ProcessingApp.Presentation.Localization
                 [nameof(ExportXmlSuccessMessage)] = "Файл XML сохранён!",
                 [nameof(ExportErrorTitle)] = "Ошибка",
                 [nameof(ExportErrorMessage)] = "Ошибка при экспорте. Подробности в логах.",
+                [nameof(ExportMissingModuleErrorMessage)] = "Модуль экспорта не найден.",
 
                 [nameof(StartupDbErrorTitle)] = "Ошибка запуска",
                 [nameof(StartupDbErrorMessage)] = "Не удалось подключиться к базе данных. Подробности в логах.",
@@ -140,6 +149,9 @@ namespace ProcessingApp.Presentation.Localization
                 [nameof(CancelButton)] = "Cancel",
                 [nameof(ExportExcelButton)] = "Export to Excel",
                 [nameof(ExportXmlButton)] = "Export to XML",
+                [nameof(PreviousPageButton)] = "< Previous",
+                [nameof(NextPageButton)] = "Next >",
+                [nameof(PageFormat)] = "Page {0}",
 
                 [nameof(ColumnDate)] = "Date",
                 [nameof(ColumnLastName)] = "Last name",
@@ -163,6 +175,7 @@ namespace ProcessingApp.Presentation.Localization
                 [nameof(ExportXmlSuccessMessage)] = "XML file saved!",
                 [nameof(ExportErrorTitle)] = "Error",
                 [nameof(ExportErrorMessage)] = "Export failed. See logs for details.",
+                [nameof(ExportMissingModuleErrorMessage)] = "Export module not found.",
 
                 [nameof(StartupDbErrorTitle)] = "Startup error",
                 [nameof(StartupDbErrorMessage)] = "Could not connect to the database. See logs for details.",

@@ -4,6 +4,7 @@ using ProcessingApp.Application.Interfaces;
 using ProcessingApp.Domain;
 using Serilog;
 using System.Globalization;
+using System.IO;
 using System.Runtime.CompilerServices;
 
 namespace ProcessingApp.Infrastructure;

@@ -6,6 +6,7 @@ using ProcessingApp.Application.Interfaces;
 using ProcessingApp.Presentation.Localization;
 using Serilog;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Windows;
 
 namespace ProcessingApp.Presentation.ViewModels;
@@ -18,14 +19,22 @@ public partial class MainViewModel : ObservableObject
 
     private readonly IEnumerable<IExporter> _exporters;
 
+    private readonly IDialogService _dialogService;
+    private bool _hasNextPage;
+
+
+
     public MainViewModel(
         IRecordRepository repository,
-       IEnumerable<IExporter> exporters,
-        ICsvImporter csvImporter)
+        IEnumerable<IExporter> exporters,
+        ICsvImporter csvImporter,
+        IDialogService dialogService)
     {
         _repository = repository;
         _exporters = exporters;
         _csvImporter = csvImporter;
+        _dialogService = dialogService;
+        Strings.Instance.PropertyChanged += StringsOnPropertyChanged;
     }
 
     [ObservableProperty]
@@ -45,11 +54,20 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private int _currentPage = 1;
 
+    public string CurrentPageDisplay => string.Format(Strings.Instance.PageFormat, CurrentPage);
+
+    partial void OnCurrentPageChanged(int value)
+    {
+        OnPropertyChanged(nameof(CurrentPageDisplay));
+    }
+
     [ObservableProperty]
     private int _pageSize = 15;
 
     [ObservableProperty]
     private ObservableCollection<RecordDTO> _records = new();
+
+
 
     private IAsyncEnumerable<RecordDTO> GetRecordsForExportAsync()
     {
@@ -65,67 +83,82 @@ public partial class MainViewModel : ObservableObject
         Strings.Instance.SetLanguage(cultureCode == "en" ? AppLanguage.English : AppLanguage.Russian);
     }
 
+    private void StringsOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (string.IsNullOrEmpty(e.PropertyName) || e.PropertyName == nameof(Strings.PageFormat))
+        {
+            OnPropertyChanged(nameof(CurrentPageDisplay));
+        }
+    }
+
     [RelayCommand]
     private async Task SearchAsync()
     {
         try
         {
             Records.Clear();
+            _hasNextPage = false; 
 
             var result = _repository.GetFilteredRecordsAsync(
-                Date, FirstName, SurName, City, Country, LastName, CurrentPage, PageSize);
+                Date, FirstName, SurName, LastName, City, Country, CurrentPage, PageSize);
 
+            int count = 0;
             await foreach (var record in result)
             {
-                Records.Add(record);
+                count++;
+
+                if (count <= PageSize)
+                {
+                    Records.Add(record);
+                }
+                else
+                {
+                    _hasNextPage = true;
+                    break;
+                }
             }
+
             PreviousPageCommand.NotifyCanExecuteChanged();
             NextPageCommand.NotifyCanExecuteChanged();
         }
         catch (Exception ex)
         {
             Log.Error(ex, "Ошибка при поиске записей в БД.");
-            System.Windows.MessageBox.Show("Не удалось выполнить поиск.", "Ошибка БД", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            _dialogService.ShowError("Не удалось выполнить поиск.", "Ошибка БД"); 
         }
     }
 
     [RelayCommand(IncludeCancelCommand = true)]
     private async Task ImportCsvAsync(CancellationToken token)
     {
-        var dialog = new OpenFileDialog { Filter = "CSV Files (*.csv)|*.csv" };
+        var filePath = _dialogService.ShowOpenFileDialog("CSV Files (*.csv)|*.csv");
 
-        if (dialog.ShowDialog() == true)
+        if (filePath != null)
         {
             try
             {
                 var culture = new System.Globalization.CultureInfo("ru-RU");
-                await _csvImporter.ImportCsvAsync(dialog.FileName, culture);
+                await _csvImporter.ImportCsvAsync(filePath, culture);
 
-                MessageBox.Show(
+                _dialogService.ShowMessage(
                     Strings.Instance.ImportSuccessMessage,
-                    Strings.Instance.ImportSuccessTitle,
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Information);
+                    Strings.Instance.ImportSuccessTitle);
 
                 await SearchAsync();
             }
             catch (OperationCanceledException)
             {
                 Log.Information("Импорт CSV был отменен пользователем.");
-                MessageBox.Show(
+                _dialogService.ShowMessage(
                     Strings.Instance.ImportCancelledMessage,
-                    Strings.Instance.ImportCancelledTitle,
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Warning);
+                    Strings.Instance.ImportCancelledTitle);
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Ошибка при импорте файла: {FileName}", dialog.FileName);
-                MessageBox.Show(
+                Log.Error(ex, "Ошибка при импорте файла: {FileName}", filePath);
+                _dialogService.ShowError(
                     Strings.Instance.ImportErrorMessage,
-                    Strings.Instance.ImportErrorTitle,
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
+                    Strings.Instance.ImportErrorTitle);
             }
         }
     }
@@ -139,7 +172,7 @@ public partial class MainViewModel : ObservableObject
         await SearchAsync();
     }
 
-    private bool CanGoNext() => Records.Count == PageSize;
+    private bool CanGoNext() => _hasNextPage;
 
     [RelayCommand(CanExecute = nameof(CanGoNext))]
     private async Task NextPageAsync()
@@ -159,27 +192,27 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     private async Task ExportExcelAsync()
     {
-        var dialog = new SaveFileDialog { Filter = "Excel Files (*.xlsx)|*.xlsx", DefaultExt = ".xlsx" };
+     
+        var filePath = _dialogService.ShowSaveFileDialog("Excel Files (*.xlsx)|*.xlsx", ".xlsx");
 
-        if (dialog.ShowDialog() == true)
+        if (filePath != null)
         {
             try
             {
                 var exporter = _exporters.FirstOrDefault(e => e.SupportedExtension == ".xlsx");
-
                 if (exporter == null)
                 {
-                    System.Windows.MessageBox.Show("В системе не зарегистрирован модуль для экспорта в Excel.", "Ошибка конфигурации");
+                    _dialogService.ShowError("Модуль экспорта не найден.", "Ошибка");
                     return;
                 }
 
-                await exporter.ExportAsync(GetRecordsForExportAsync(), dialog.FileName);
-                System.Windows.MessageBox.Show("Файл Excel сохранен!", "Успех");
+                await exporter.ExportAsync(GetRecordsForExportAsync(), filePath);
+                _dialogService.ShowMessage("Файл Excel успешно сохранен!", "Успех");
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Ошибка при экспорте в Excel");
-                MessageBox.Show(Strings.Instance.ExportErrorMessage, Strings.Instance.ExportErrorTitle);
+                Log.Error(ex, "Ошибка экспорта");
+                _dialogService.ShowError("Ошибка при экспорте. Подробности в логах.", "Ошибка");
             }
         }
     }
@@ -187,28 +220,27 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     private async Task ExportXmlAsync()
     {
-        var dialog = new SaveFileDialog { Filter = "XML Files (*.xml)|*.xml", DefaultExt = ".xml" };
+        var filePath = _dialogService.ShowSaveFileDialog("XML Files (*.xml)|*.xml", ".xml");
 
-        if (dialog.ShowDialog() == true)
+        if (filePath != null)
         {
             try
             {
-
                 var exporter = _exporters.FirstOrDefault(e => e.SupportedExtension == ".xml");
 
                 if (exporter == null)
                 {
-                    System.Windows.MessageBox.Show("В системе не зарегистрирован модуль для экспорта в XML.", "Ошибка конфигурации");
+                    _dialogService.ShowError("В системе не зарегистрирован модуль для экспорта в XML.", "Ошибка конфигурации");
                     return;
                 }
 
-                await exporter.ExportAsync(GetRecordsForExportAsync(), dialog.FileName);
-                System.Windows.MessageBox.Show("Файл XML сохранен!", "Успех");
+                await exporter.ExportAsync(GetRecordsForExportAsync(), filePath);
+                _dialogService.ShowMessage("Файл XML сохранен!", "Успех");
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Ошибка при экспорте в XML");
-                System.Windows.MessageBox.Show("Ошибка при экспорте. Подробности в логах.", "Ошибка");
+                _dialogService.ShowError("Ошибка при экспорте. Подробности в логах.", "Ошибка");
             }
         }
     }

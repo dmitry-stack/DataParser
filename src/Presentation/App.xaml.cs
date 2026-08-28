@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using ProcessingApp.Application.Interfaces;
 using ProcessingApp.Infrastructure;
+using ProcessingApp.Infrastructure.Services;
 using ProcessingApp.Presentation.ViewModels;
 using Serilog;
 using System.Windows;
@@ -13,6 +14,7 @@ namespace ProcessingApp.Presentation
     {
         private ServiceProvider _serviceProvider;
         public IConfiguration Configuration { get; private set; }
+
         public App()
         {
 
@@ -35,6 +37,7 @@ namespace ProcessingApp.Presentation
 
             services.AddDbContextFactory<AppDbContext>(options => options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
 
+            services.AddSingleton<IDialogService, WpfDialogService>();
 
             services.AddTransient<IRecordRepository, RecordRepository>();
             services.AddTransient<ICsvImporter, CSVImport>();
