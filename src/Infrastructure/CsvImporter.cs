@@ -1,24 +1,18 @@
 ﻿using CsvHelper;
 using CsvHelper.Configuration;
+using Microsoft.EntityFrameworkCore;
+using ProcessingApp.Application.DTOs;
 using ProcessingApp.Application.Interfaces;
 using ProcessingApp.Domain;
 using Serilog;
 using System.Globalization;
-using System.IO;
 using System.Runtime.CompilerServices;
 
 namespace ProcessingApp.Infrastructure;
 
-public class CSVImport : ICsvImporter
+public class CsvImporter(IDbContextFactory<AppDbContext> contextFactory) : ICsvImporter
 {
-    private readonly Microsoft.EntityFrameworkCore.IDbContextFactory<AppDbContext> _contextFactory;
     private const int BatchSize = 5000;
-
-    public CSVImport(Microsoft.EntityFrameworkCore.IDbContextFactory<AppDbContext> contextFactory)
-    {
-        _contextFactory = contextFactory;
-    }
-
 
     public async Task ImportCsvAsync(string filePath, CultureInfo culture, CancellationToken token = default)
     {
@@ -28,7 +22,11 @@ public class CSVImport : ICsvImporter
         await SaveToDatabaseInBatchesAsync(parsedRecords, token);
     }
 
-    private async IAsyncEnumerable<Record> ReadAndParseCsvAsync(
+    /// <summary>
+    /// Читает CSV и отдаёт строки как <see cref="RecordDTO"/>: это чистая передача данных,
+    /// в сущность БД строка превращается только непосредственно перед сохранением.
+    /// </summary>
+    private static async IAsyncEnumerable<RecordDTO> ReadAndParseCsvAsync(
         string filePath,
         CultureInfo culture,
         [EnumeratorCancellation] CancellationToken token)
@@ -50,54 +48,55 @@ public class CSVImport : ICsvImporter
         }
 
         csv.ReadHeader();
-        int rowNumber = 1;
+        var rowNumber = 1;
 
         while (await csv.ReadAsync())
         {
             token.ThrowIfCancellationRequested();
             rowNumber++;
 
-            Record? record = null;
+            RecordDTO dto;
 
             try
             {
-                record = new Record
-                {
-                    Date = csv.GetField<DateTime>("Дата"),
-                    FirstName = csv.GetField<string>("Имя") ?? string.Empty,
-                    LastName = csv.GetField<string>("Фамилия") ?? string.Empty,
-                    SurName = csv.GetField<string>("Отчество") ?? string.Empty,
-                    City = csv.GetField<string>("Город") ?? string.Empty,
-                    Country = csv.GetField<string>("Страна") ?? string.Empty,
-                };
+                dto = new RecordDTO(
+                    csv.GetField<DateTime>("Дата"),
+                    csv.GetField<string>("Имя") ?? string.Empty,
+                    csv.GetField<string>("Фамилия") ?? string.Empty,
+                    csv.GetField<string>("Отчество") ?? string.Empty,
+                    csv.GetField<string>("Город") ?? string.Empty,
+                    csv.GetField<string>("Страна") ?? string.Empty);
             }
             catch (Exception ex)
             {
-
-                Log.Warning(ex, "Ошибка парсинга CSV на строке {Row}. Сырые данные: {RawRecord}", rowNumber, csv.Parser.RawRecord);
+                Log.Warning(
+                    ex,
+                    "Ошибка парсинга CSV на строке {Row}. Сырые данные: {RawRecord}",
+                    rowNumber,
+                    csv.Parser.RawRecord);
                 continue;
             }
 
-            if (string.IsNullOrWhiteSpace(record.LastName) ||
-                string.IsNullOrWhiteSpace(record.City) ||
-                string.IsNullOrWhiteSpace(record.Country))
+            if (string.IsNullOrWhiteSpace(dto.LastName) ||
+                string.IsNullOrWhiteSpace(dto.City) ||
+                string.IsNullOrWhiteSpace(dto.Country))
             {
                 Log.Warning("Пропущена строка {Row}: отсутствуют обязательные поля.", rowNumber);
                 continue;
             }
 
-            yield return record;
+            yield return dto;
         }
     }
 
-    private async Task SaveToDatabaseInBatchesAsync(IAsyncEnumerable<Record> records, CancellationToken token)
+    private async Task SaveToDatabaseInBatchesAsync(IAsyncEnumerable<RecordDTO> records, CancellationToken token)
     {
-        int recordsCount = 0;
-        using var context = await _contextFactory.CreateDbContextAsync(token);
+        var recordsCount = 0;
+        using var context = await contextFactory.CreateDbContextAsync(token);
 
-        await foreach (var record in records.WithCancellation(token))
+        await foreach (var dto in records.WithCancellation(token))
         {
-            context.Records.Add(record);
+            context.Records.Add(ToEntity(dto));
             recordsCount++;
 
             if (recordsCount % BatchSize == 0)
@@ -116,4 +115,14 @@ public class CSVImport : ICsvImporter
 
         Log.Information("Импорт завершен. Всего добавлено: {Total}", recordsCount);
     }
+
+    private static Record ToEntity(RecordDTO dto) => new()
+    {
+        Date = dto.Date,
+        FirstName = dto.FirstName,
+        LastName = dto.LastName,
+        SurName = dto.SurName,
+        City = dto.City,
+        Country = dto.Country,
+    };
 }

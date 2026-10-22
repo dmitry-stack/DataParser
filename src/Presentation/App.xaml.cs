@@ -1,88 +1,123 @@
+using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using ProcessingApp.Application.Interfaces;
 using ProcessingApp.Infrastructure;
-using ProcessingApp.Infrastructure.Services;
+using ProcessingApp.Presentation.Localization;
+using ProcessingApp.Presentation.Services;
+using ProcessingApp.Presentation.State;
 using ProcessingApp.Presentation.ViewModels;
 using Serilog;
 using System.Windows;
 
-namespace ProcessingApp.Presentation
+namespace ProcessingApp.Presentation;
+
+public partial class App : System.Windows.Application
 {
-    public partial class App : System.Windows.Application
+    private readonly ServiceProvider _serviceProvider;
+
+    public App()
     {
-        private ServiceProvider _serviceProvider;
-        public IConfiguration Configuration { get; private set; }
+        Configuration = BuildConfiguration();
+        ConfigureLogging();
 
-        public App()
+        Log.Information("Приложение запускается");
+
+        _serviceProvider = BuildServiceProvider(Configuration);
+    }
+
+    public IConfiguration Configuration { get; }
+
+    protected override void OnStartup(StartupEventArgs e)
+    {
+        base.OnStartup(e);
+
+        if (!TryInitializeDatabase())
         {
-
-            var builder = new ConfigurationBuilder()
-                .SetBasePath(System.AppDomain.CurrentDomain.BaseDirectory)
-                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
-            Configuration = builder.Build();
-
-
-            Log.Logger = new LoggerConfiguration()
-                .MinimumLevel.Information()
-                .WriteTo.Debug()
-                .WriteTo.File("logs/app_log.txt",
-                    rollingInterval: RollingInterval.Day,
-                    outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
-                .CreateLogger();
-            Log.Information("Приложение запускается");
-
-            var services = new ServiceCollection();
-
-            services.AddDbContextFactory<AppDbContext>(options => options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
-
-            services.AddSingleton<IDialogService, WpfDialogService>();
-
-            services.AddTransient<IRecordRepository, RecordRepository>();
-            services.AddTransient<ICsvImporter, CSVImport>();
-            services.AddTransient<IExporter, ExcelExporter>();
-            services.AddTransient<IExporter, XmlExporter>();
-
-            services.AddTransient<MainViewModel>();
-            services.AddTransient<MainWindow>();
-
-            _serviceProvider = services.BuildServiceProvider();
+            Shutdown();
+            return;
         }
-        protected override void OnExit(ExitEventArgs e)
-        {
 
-            Log.Information("Приложение завершается");
-            Log.CloseAndFlush();
-            base.OnExit(e);
+        _serviceProvider.GetRequiredService<MainWindow>().Show();
+    }
+
+    protected override void OnExit(ExitEventArgs e)
+    {
+        Log.Information("Приложение завершается");
+        Log.CloseAndFlush();
+        _serviceProvider.Dispose();
+
+        base.OnExit(e);
+    }
+
+    private static IConfiguration BuildConfiguration() =>
+        new ConfigurationBuilder()
+            .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
+            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+            .Build();
+
+    private static void ConfigureLogging() =>
+        Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.Information()
+            .WriteTo.Debug()
+            .WriteTo.File(
+                "logs/app_log.txt",
+                rollingInterval: RollingInterval.Day,
+                outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
+            .CreateLogger();
+
+    private static ServiceProvider BuildServiceProvider(IConfiguration configuration)
+    {
+        var services = new ServiceCollection();
+
+        services.AddDbContextFactory<AppDbContext>(options =>
+            options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
+
+        services.AddSingleton<IMessenger>(WeakReferenceMessenger.Default);
+        services.AddSingleton<IDialogService, WpfDialogService>();
+        services.AddSingleton<SearchFilter>();
+
+        services.AddTransient<IRecordRepository, RecordRepository>();
+        services.AddTransient<ICsvImporter, CsvImporter>();
+        services.AddTransient<IExporter, ExcelExporter>();
+        services.AddTransient<IExporter, XmlExporter>();
+
+        // ViewModel'и страниц — синглтоны: состояние (результаты поиска, выбранный файл)
+        // сохраняется при переключении между разделами.
+        services.AddSingleton<SearchViewModel>();
+        services.AddSingleton<ImportViewModel>();
+        services.AddSingleton<ExportViewModel>();
+        services.AddSingleton<ShellViewModel>();
+
+        services.AddSingleton<MainWindow>();
+
+        return services.BuildServiceProvider();
+    }
+
+    private bool TryInitializeDatabase()
+    {
+        try
+        {
+            Log.Information("Проверка и инициализация базы данных...");
+
+            var contextFactory = _serviceProvider.GetRequiredService<IDbContextFactory<AppDbContext>>();
+            using var context = contextFactory.CreateDbContext();
+            context.Database.EnsureCreated();
+
+            return true;
         }
-        protected override void OnStartup(StartupEventArgs e)
+        catch (Exception ex)
         {
-            base.OnStartup(e);
+            Log.Fatal(ex, "Критическая ошибка при подключении к базе данных или её создании.");
 
-            try
-            {
-                Log.Information("Проверка и инициализация базы данных...");
-                using (var scope = _serviceProvider.CreateScope())
-                {
-                    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-                    dbContext.Database.EnsureCreated();
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Fatal(ex, "Критическая ошибка при подключении к базе данных или её создании.");
-                MessageBox.Show("Не удалось подключиться к базе данных. Проверьте настройки SQL Server.\n\nПодробности записаны в файл логов.",
-                                "Критическая ошибка запуска",
-                                MessageBoxButton.OK,
-                                MessageBoxImage.Error);
+            MessageBox.Show(
+                Strings.Instance.StartupDbErrorMessage,
+                Strings.Instance.StartupDbErrorTitle,
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
 
-                Current.Shutdown();
-                return;
-            }
-
-            var mainWindow = _serviceProvider.GetRequiredService<MainWindow>();
-            mainWindow.Show();
+            return false;
         }
     }
 }

@@ -1,10 +1,10 @@
-﻿using Microsoft.Win32;
-using System.Windows;
+using Microsoft.Win32;
 using ProcessingApp.Application.Interfaces;
+using System.Windows;
 
-namespace ProcessingApp.Infrastructure.Services;
+namespace ProcessingApp.Presentation.Services;
 
-public class WpfDialogService : IDialogService
+public sealed class WpfDialogService : IDialogService
 {
     public void ShowMessage(string message, string title) =>
         MessageBox.Show(message, title, MessageBoxButton.OK, MessageBoxImage.Information);

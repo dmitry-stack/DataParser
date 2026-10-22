@@ -1,185 +1,250 @@
 ﻿using System.ComponentModel;
 
-namespace ProcessingApp.Presentation.Localization
+namespace ProcessingApp.Presentation.Localization;
+
+public enum AppLanguage
 {
-    public enum AppLanguage
+    Russian,
+    English,
+}
+
+public sealed class Strings : INotifyPropertyChanged
+{
+    public static Strings Instance { get; } = new();
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    private AppLanguage _language = AppLanguage.Russian;
+
+    private Strings()
     {
-        Russian,
-        English
     }
 
+    public AppLanguage Language => _language;
 
-    public sealed class Strings : INotifyPropertyChanged
+    public void SetLanguage(AppLanguage language)
     {
-        public static Strings Instance { get; } = new Strings();
-
-        public event PropertyChangedEventHandler? PropertyChanged;
-
-        private AppLanguage _language = AppLanguage.Russian;
-
-        private Strings()
+        if (_language == language)
         {
+            return;
         }
 
-        public AppLanguage Language => _language;
+        _language = language;
 
-        public void SetLanguage(AppLanguage language)
-        {
-            if (_language == language)
-            {
-                return;
-            }
-
-            _language = language;
-
-
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(string.Empty));
-        }
-
-        private string Get(string key) =>
-            _resources.TryGetValue(_language, out var dict) && dict.TryGetValue(key, out var value)
-                ? value
-                : key;
-
-        public string WindowTitle => Get(nameof(WindowTitle));
-        public string SearchGroupHeader => Get(nameof(SearchGroupHeader));
-        public string DateWatermark => Get(nameof(DateWatermark));
-        public string LastNameWatermark => Get(nameof(LastNameWatermark));
-        public string FirstNameWatermark => Get(nameof(FirstNameWatermark));
-        public string SurNameWatermark => Get(nameof(SurNameWatermark));
-        public string CityWatermark => Get(nameof(CityWatermark));
-        public string CountryWatermark => Get(nameof(CountryWatermark));
-        public string SearchButton => Get(nameof(SearchButton));
-        public string ImportCsvButton => Get(nameof(ImportCsvButton));
-        public string CancelButton => Get(nameof(CancelButton));
-        public string ExportExcelButton => Get(nameof(ExportExcelButton));
-        public string ExportXmlButton => Get(nameof(ExportXmlButton));
-
-        public string PreviousPageButton => Get(nameof(PreviousPageButton));
-        public string NextPageButton => Get(nameof(NextPageButton));
-        public string PageFormat => Get(nameof(PageFormat));
-
-        public string ColumnDate => Get(nameof(ColumnDate));
-        public string ColumnLastName => Get(nameof(ColumnLastName));
-        public string ColumnFirstName => Get(nameof(ColumnFirstName));
-        public string ColumnSurName => Get(nameof(ColumnSurName));
-        public string ColumnCity => Get(nameof(ColumnCity));
-        public string ColumnCountry => Get(nameof(ColumnCountry));
-
-        public string ImportSuccessTitle => Get(nameof(ImportSuccessTitle));
-        public string ImportSuccessMessage => Get(nameof(ImportSuccessMessage));
-        public string ImportCancelledTitle => Get(nameof(ImportCancelledTitle));
-        public string ImportCancelledMessage => Get(nameof(ImportCancelledMessage));
-        public string ImportErrorTitle => Get(nameof(ImportErrorTitle));
-        public string ImportErrorMessage => Get(nameof(ImportErrorMessage));
-
-        public string SearchErrorTitle => Get(nameof(SearchErrorTitle));
-        public string SearchErrorMessage => Get(nameof(SearchErrorMessage));
-
-        public string ExportSuccessTitle => Get(nameof(ExportSuccessTitle));
-        public string ExportExcelSuccessMessage => Get(nameof(ExportExcelSuccessMessage));
-        public string ExportXmlSuccessMessage => Get(nameof(ExportXmlSuccessMessage));
-        public string ExportErrorTitle => Get(nameof(ExportErrorTitle));
-        public string ExportErrorMessage => Get(nameof(ExportErrorMessage));
-        public string ExportMissingModuleErrorMessage => Get(nameof(ExportMissingModuleErrorMessage));
-
-        public string StartupDbErrorTitle => Get(nameof(StartupDbErrorTitle));
-        public string StartupDbErrorMessage => Get(nameof(StartupDbErrorMessage));
-
-        private static readonly Dictionary<AppLanguage, Dictionary<string, string>> _resources = new()
-        {
-            [AppLanguage.Russian] = new Dictionary<string, string>
-            {
-                [nameof(WindowTitle)] = "Управление данными",
-                [nameof(SearchGroupHeader)] = "Параметры поиска",
-                [nameof(DateWatermark)] = "Выберите дату",
-                [nameof(LastNameWatermark)] = "Фамилия",
-                [nameof(FirstNameWatermark)] = "Имя",
-                [nameof(SurNameWatermark)] = "Отчество",
-                [nameof(CityWatermark)] = "Город",
-                [nameof(CountryWatermark)] = "Страна",
-                [nameof(SearchButton)] = "Поиск",
-                [nameof(ImportCsvButton)] = "Импорт CSV...",
-                [nameof(CancelButton)] = "Отмена",
-                [nameof(ExportExcelButton)] = "Экспорт в Excel",
-                [nameof(ExportXmlButton)] = "Экспорт в XML",
-                [nameof(PreviousPageButton)] = "< Назад",
-                [nameof(NextPageButton)] = "Вперед >",
-                [nameof(PageFormat)] = "Страница {0}",
-
-                [nameof(ColumnDate)] = "Дата",
-                [nameof(ColumnLastName)] = "Фамилия",
-                [nameof(ColumnFirstName)] = "Имя",
-                [nameof(ColumnSurName)] = "Отчество",
-                [nameof(ColumnCity)] = "Город",
-                [nameof(ColumnCountry)] = "Страна",
-
-                [nameof(ImportSuccessTitle)] = "Успех",
-                [nameof(ImportSuccessMessage)] = "Данные успешно импортированы!",
-                [nameof(ImportCancelledTitle)] = "Отмена",
-                [nameof(ImportCancelledMessage)] = "Импорт отменён.",
-                [nameof(ImportErrorTitle)] = "Ошибка",
-                [nameof(ImportErrorMessage)] = "Произошла ошибка при импорте. Подробности в логах.",
-
-                [nameof(SearchErrorTitle)] = "Ошибка БД",
-                [nameof(SearchErrorMessage)] = "Не удалось выполнить поиск. Проверьте подключение к базе данных.",
-
-                [nameof(ExportSuccessTitle)] = "Успех",
-                [nameof(ExportExcelSuccessMessage)] = "Файл Excel сохранён!",
-                [nameof(ExportXmlSuccessMessage)] = "Файл XML сохранён!",
-                [nameof(ExportErrorTitle)] = "Ошибка",
-                [nameof(ExportErrorMessage)] = "Ошибка при экспорте. Подробности в логах.",
-                [nameof(ExportMissingModuleErrorMessage)] = "Модуль экспорта не найден.",
-
-                [nameof(StartupDbErrorTitle)] = "Ошибка запуска",
-                [nameof(StartupDbErrorMessage)] = "Не удалось подключиться к базе данных. Подробности в логах.",
-            },
-            [AppLanguage.English] = new Dictionary<string, string>
-            {
-                [nameof(WindowTitle)] = "Data Management",
-                [nameof(SearchGroupHeader)] = "Search parameters",
-                [nameof(DateWatermark)] = "Select date",
-                [nameof(LastNameWatermark)] = "Last name",
-                [nameof(FirstNameWatermark)] = "First name",
-                [nameof(SurNameWatermark)] = "Middle name",
-                [nameof(CityWatermark)] = "City",
-                [nameof(CountryWatermark)] = "Country",
-                [nameof(SearchButton)] = "Search",
-                [nameof(ImportCsvButton)] = "Import CSV...",
-                [nameof(CancelButton)] = "Cancel",
-                [nameof(ExportExcelButton)] = "Export to Excel",
-                [nameof(ExportXmlButton)] = "Export to XML",
-                [nameof(PreviousPageButton)] = "< Previous",
-                [nameof(NextPageButton)] = "Next >",
-                [nameof(PageFormat)] = "Page {0}",
-
-                [nameof(ColumnDate)] = "Date",
-                [nameof(ColumnLastName)] = "Last name",
-                [nameof(ColumnFirstName)] = "First name",
-                [nameof(ColumnSurName)] = "Middle name",
-                [nameof(ColumnCity)] = "City",
-                [nameof(ColumnCountry)] = "Country",
-
-                [nameof(ImportSuccessTitle)] = "Success",
-                [nameof(ImportSuccessMessage)] = "Data imported successfully!",
-                [nameof(ImportCancelledTitle)] = "Cancelled",
-                [nameof(ImportCancelledMessage)] = "Import cancelled.",
-                [nameof(ImportErrorTitle)] = "Error",
-                [nameof(ImportErrorMessage)] = "An error occurred during import. See logs for details.",
-
-                [nameof(SearchErrorTitle)] = "Database error",
-                [nameof(SearchErrorMessage)] = "Search failed. Check the database connection.",
-
-                [nameof(ExportSuccessTitle)] = "Success",
-                [nameof(ExportExcelSuccessMessage)] = "Excel file saved!",
-                [nameof(ExportXmlSuccessMessage)] = "XML file saved!",
-                [nameof(ExportErrorTitle)] = "Error",
-                [nameof(ExportErrorMessage)] = "Export failed. See logs for details.",
-                [nameof(ExportMissingModuleErrorMessage)] = "Export module not found.",
-
-                [nameof(StartupDbErrorTitle)] = "Startup error",
-                [nameof(StartupDbErrorMessage)] = "Could not connect to the database. See logs for details.",
-            },
-        };
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(string.Empty));
     }
+
+    private string Get(string key) =>
+        _resources.TryGetValue(_language, out var dict) && dict.TryGetValue(key, out var value)
+            ? value
+            : key;
+
+    public string WindowTitle => Get(nameof(WindowTitle));
+
+    // Навигация
+    public string NavSearch => Get(nameof(NavSearch));
+    public string NavImport => Get(nameof(NavImport));
+    public string NavExport => Get(nameof(NavExport));
+
+    // Страница поиска
+    public string SearchPageTitle => Get(nameof(SearchPageTitle));
+    public string SearchGroupHeader => Get(nameof(SearchGroupHeader));
+    public string DateWatermark => Get(nameof(DateWatermark));
+    public string LastNameWatermark => Get(nameof(LastNameWatermark));
+    public string FirstNameWatermark => Get(nameof(FirstNameWatermark));
+    public string SurNameWatermark => Get(nameof(SurNameWatermark));
+    public string CityWatermark => Get(nameof(CityWatermark));
+    public string CountryWatermark => Get(nameof(CountryWatermark));
+    public string SearchButton => Get(nameof(SearchButton));
+    public string ClearButton => Get(nameof(ClearButton));
+
+    public string PreviousPageButton => Get(nameof(PreviousPageButton));
+    public string NextPageButton => Get(nameof(NextPageButton));
+    public string PageFormat => Get(nameof(PageFormat));
+
+    public string ColumnDate => Get(nameof(ColumnDate));
+    public string ColumnLastName => Get(nameof(ColumnLastName));
+    public string ColumnFirstName => Get(nameof(ColumnFirstName));
+    public string ColumnSurName => Get(nameof(ColumnSurName));
+    public string ColumnCity => Get(nameof(ColumnCity));
+    public string ColumnCountry => Get(nameof(ColumnCountry));
+
+    public string SearchErrorTitle => Get(nameof(SearchErrorTitle));
+    public string SearchErrorMessage => Get(nameof(SearchErrorMessage));
+
+    // Страница импорта
+    public string ImportPageTitle => Get(nameof(ImportPageTitle));
+    public string ImportPageDescription => Get(nameof(ImportPageDescription));
+    public string FilePathWatermark => Get(nameof(FilePathWatermark));
+    public string BrowseButton => Get(nameof(BrowseButton));
+    public string ImportStartButton => Get(nameof(ImportStartButton));
+    public string CancelButton => Get(nameof(CancelButton));
+
+    public string ImportSuccessTitle => Get(nameof(ImportSuccessTitle));
+    public string ImportSuccessMessage => Get(nameof(ImportSuccessMessage));
+    public string ImportCancelledTitle => Get(nameof(ImportCancelledTitle));
+    public string ImportCancelledMessage => Get(nameof(ImportCancelledMessage));
+    public string ImportErrorTitle => Get(nameof(ImportErrorTitle));
+    public string ImportErrorMessage => Get(nameof(ImportErrorMessage));
+
+    // Страница экспорта
+    public string ExportPageTitle => Get(nameof(ExportPageTitle));
+    public string ExportPageDescription => Get(nameof(ExportPageDescription));
+    public string ExportFiltersHeader => Get(nameof(ExportFiltersHeader));
+    public string ExportFiltersNone => Get(nameof(ExportFiltersNone));
+    public string ExportExcelButton => Get(nameof(ExportExcelButton));
+    public string ExportXmlButton => Get(nameof(ExportXmlButton));
+
+    public string ExportSuccessTitle => Get(nameof(ExportSuccessTitle));
+    public string ExportExcelSuccessMessage => Get(nameof(ExportExcelSuccessMessage));
+    public string ExportXmlSuccessMessage => Get(nameof(ExportXmlSuccessMessage));
+    public string ExportCancelledTitle => Get(nameof(ExportCancelledTitle));
+    public string ExportCancelledMessage => Get(nameof(ExportCancelledMessage));
+    public string ExportErrorTitle => Get(nameof(ExportErrorTitle));
+    public string ExportErrorMessage => Get(nameof(ExportErrorMessage));
+    public string ExportMissingModuleErrorMessage => Get(nameof(ExportMissingModuleErrorMessage));
+
+    // Запуск приложения
+    public string StartupDbErrorTitle => Get(nameof(StartupDbErrorTitle));
+    public string StartupDbErrorMessage => Get(nameof(StartupDbErrorMessage));
+
+    private static readonly Dictionary<AppLanguage, Dictionary<string, string>> _resources = new()
+    {
+        [AppLanguage.Russian] = new Dictionary<string, string>
+        {
+            [nameof(WindowTitle)] = "Управление данными",
+
+            [nameof(NavSearch)] = "Поиск",
+            [nameof(NavImport)] = "Импорт",
+            [nameof(NavExport)] = "Экспорт",
+
+            [nameof(SearchPageTitle)] = "Поиск записей",
+            [nameof(SearchGroupHeader)] = "Параметры поиска",
+            [nameof(DateWatermark)] = "Выберите дату",
+            [nameof(LastNameWatermark)] = "Фамилия",
+            [nameof(FirstNameWatermark)] = "Имя",
+            [nameof(SurNameWatermark)] = "Отчество",
+            [nameof(CityWatermark)] = "Город",
+            [nameof(CountryWatermark)] = "Страна",
+            [nameof(SearchButton)] = "Поиск",
+            [nameof(ClearButton)] = "Сбросить",
+            [nameof(PreviousPageButton)] = "< Назад",
+            [nameof(NextPageButton)] = "Вперед >",
+            [nameof(PageFormat)] = "Страница {0}",
+
+            [nameof(ColumnDate)] = "Дата",
+            [nameof(ColumnLastName)] = "Фамилия",
+            [nameof(ColumnFirstName)] = "Имя",
+            [nameof(ColumnSurName)] = "Отчество",
+            [nameof(ColumnCity)] = "Город",
+            [nameof(ColumnCountry)] = "Страна",
+
+            [nameof(SearchErrorTitle)] = "Ошибка БД",
+            [nameof(SearchErrorMessage)] = "Не удалось выполнить поиск. Проверьте подключение к базе данных.",
+
+            [nameof(ImportPageTitle)] = "Импорт данных",
+            [nameof(ImportPageDescription)] =
+                "Загрузите записи из CSV-файла в базу данных. Разделитель — «;», даты — в формате дд.мм.гггг, " +
+                "первая строка — заголовки: Дата;Имя;Фамилия;Отчество;Город;Страна.",
+            [nameof(FilePathWatermark)] = "Файл не выбран",
+            [nameof(BrowseButton)] = "Выбрать файл...",
+            [nameof(ImportStartButton)] = "Импортировать",
+            [nameof(CancelButton)] = "Отмена",
+
+            [nameof(ImportSuccessTitle)] = "Успех",
+            [nameof(ImportSuccessMessage)] = "Данные успешно импортированы!",
+            [nameof(ImportCancelledTitle)] = "Отмена",
+            [nameof(ImportCancelledMessage)] = "Импорт отменён.",
+            [nameof(ImportErrorTitle)] = "Ошибка",
+            [nameof(ImportErrorMessage)] = "Произошла ошибка при импорте. Подробности в логах.",
+
+            [nameof(ExportPageTitle)] = "Экспорт данных",
+            [nameof(ExportPageDescription)] =
+                "Выгрузка записей, подходящих под фильтры со страницы «Поиск», в выбранный формат.",
+            [nameof(ExportFiltersHeader)] = "Текущие фильтры",
+            [nameof(ExportFiltersNone)] = "Фильтры не заданы — будут выгружены все записи.",
+            [nameof(ExportExcelButton)] = "Экспорт в Excel",
+            [nameof(ExportXmlButton)] = "Экспорт в XML",
+
+            [nameof(ExportSuccessTitle)] = "Успех",
+            [nameof(ExportExcelSuccessMessage)] = "Файл Excel сохранён!",
+            [nameof(ExportXmlSuccessMessage)] = "Файл XML сохранён!",
+            [nameof(ExportCancelledTitle)] = "Отмена",
+            [nameof(ExportCancelledMessage)] = "Экспорт отменён.",
+            [nameof(ExportErrorTitle)] = "Ошибка",
+            [nameof(ExportErrorMessage)] = "Ошибка при экспорте. Подробности в логах.",
+            [nameof(ExportMissingModuleErrorMessage)] = "Модуль экспорта не найден.",
+
+            [nameof(StartupDbErrorTitle)] = "Ошибка запуска",
+            [nameof(StartupDbErrorMessage)] = "Не удалось подключиться к базе данных. Подробности в логах.",
+        },
+        [AppLanguage.English] = new Dictionary<string, string>
+        {
+            [nameof(WindowTitle)] = "Data Management",
+
+            [nameof(NavSearch)] = "Search",
+            [nameof(NavImport)] = "Import",
+            [nameof(NavExport)] = "Export",
+
+            [nameof(SearchPageTitle)] = "Search records",
+            [nameof(SearchGroupHeader)] = "Search parameters",
+            [nameof(DateWatermark)] = "Select date",
+            [nameof(LastNameWatermark)] = "Last name",
+            [nameof(FirstNameWatermark)] = "First name",
+            [nameof(SurNameWatermark)] = "Middle name",
+            [nameof(CityWatermark)] = "City",
+            [nameof(CountryWatermark)] = "Country",
+            [nameof(SearchButton)] = "Search",
+            [nameof(ClearButton)] = "Reset",
+            [nameof(PreviousPageButton)] = "< Previous",
+            [nameof(NextPageButton)] = "Next >",
+            [nameof(PageFormat)] = "Page {0}",
+
+            [nameof(ColumnDate)] = "Date",
+            [nameof(ColumnLastName)] = "Last name",
+            [nameof(ColumnFirstName)] = "First name",
+            [nameof(ColumnSurName)] = "Middle name",
+            [nameof(ColumnCity)] = "City",
+            [nameof(ColumnCountry)] = "Country",
+
+            [nameof(SearchErrorTitle)] = "Database error",
+            [nameof(SearchErrorMessage)] = "Search failed. Check the database connection.",
+
+            [nameof(ImportPageTitle)] = "Import data",
+            [nameof(ImportPageDescription)] =
+                "Load records from a CSV file into the database. The delimiter is ';', dates use the dd.MM.yyyy " +
+                "format and the first row holds the headers (kept in Russian): Дата;Имя;Фамилия;Отчество;Город;Страна.",
+            [nameof(FilePathWatermark)] = "No file selected",
+            [nameof(BrowseButton)] = "Choose file...",
+            [nameof(ImportStartButton)] = "Import",
+            [nameof(CancelButton)] = "Cancel",
+
+            [nameof(ImportSuccessTitle)] = "Success",
+            [nameof(ImportSuccessMessage)] = "Data imported successfully!",
+            [nameof(ImportCancelledTitle)] = "Cancelled",
+            [nameof(ImportCancelledMessage)] = "Import cancelled.",
+            [nameof(ImportErrorTitle)] = "Error",
+            [nameof(ImportErrorMessage)] = "An error occurred during import. See logs for details.",
+
+            [nameof(ExportPageTitle)] = "Export data",
+            [nameof(ExportPageDescription)] =
+                "Export the records that match the filters from the Search page to the chosen format.",
+            [nameof(ExportFiltersHeader)] = "Current filters",
+            [nameof(ExportFiltersNone)] = "No filters set — all records will be exported.",
+            [nameof(ExportExcelButton)] = "Export to Excel",
+            [nameof(ExportXmlButton)] = "Export to XML",
+
+            [nameof(ExportSuccessTitle)] = "Success",
+            [nameof(ExportExcelSuccessMessage)] = "Excel file saved!",
+            [nameof(ExportXmlSuccessMessage)] = "XML file saved!",
+            [nameof(ExportCancelledTitle)] = "Cancelled",
+            [nameof(ExportCancelledMessage)] = "Export cancelled.",
+            [nameof(ExportErrorTitle)] = "Error",
+            [nameof(ExportErrorMessage)] = "Export failed. See logs for details.",
+            [nameof(ExportMissingModuleErrorMessage)] = "Export module not found.",
+
+            [nameof(StartupDbErrorTitle)] = "Startup error",
+            [nameof(StartupDbErrorMessage)] = "Could not connect to the database. See logs for details.",
+        },
+    };
 }
